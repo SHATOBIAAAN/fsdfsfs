@@ -1,0 +1,147 @@
+/* Основные стили контейнера */
+.login-container {
+    position: relative;
+    overflow: visible;
+    transition: height 0.5s ease-out, min-height 0.5s ease-out;
+    padding-bottom: 20px;
+}
+
+/* Изменение размера контейнера при ошибке */
+.login-container.with-error {
+    min-height: 450px; /* Увеличенная высота при ошибке */
+}
+
+.login-container.without-error {
+    min-height: 350px; /* Нормальная высота */
+}
+
+/* Стили для полей с иконками */
+.input-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+.input-wrapper input {
+    margin-bottom: 0;
+    padding: 15px;
+    width: 92%;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Unbounded', regular;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    padding-right: 40px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-wrapper input:focus {
+    border-color: #99ff8b;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(153, 255, 139, 0.3);
+}
+
+.input-wrapper input::placeholder {
+    font-family: 'Unbounded', regular;
+    color: #aaa;
+}
+
+.input-icon {
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+    user-select: none;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.3s ease;
+}
+
+.input-wrapper input:focus + .input-icon {
+    color: #99ff8b;
+}
+
+/* Стили ошибки */
+.container-auth-error {
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 15px;
+    background: rgba(255, 0, 0, 0.2);
+    border-radius: 7px;
+    border-left: 4px solid #ff6b6b;
+    text-align: center;
+    width: 90%;
+    margin: 0 auto;
+    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: fadeInMessage 1s forwards 0.5s;
+}
+
+/* Отдельные анимации */
+@keyframes fadeInMessage {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes flameBg {
+    0% {
+        background-color: #7db875;
+    }
+    30% {
+        background-color: #b89e75;
+    }
+    60% {
+        background-color: #b88675;
+    }
+    100% {
+        background-color: #b87575;
+    }
+}
+
+@keyframes flameBorder {
+    0% {
+        border-color: white;
+    }
+    30% {
+        border-color: #ffcf6b;
+    }
+    60% {
+        border-color: #ff9e6b;
+    }
+    100% {
+        border-color: #ff6b6b;
+    }
+}
+
+@keyframes shakeError {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Применение анимаций для контейнера с ошибкой */
+.login-container.with-error {
+    animation: flameBg 2s ease forwards, flameBorder 2s ease forwards,
+        shakeError 0.8s ease 0.5s;
+}

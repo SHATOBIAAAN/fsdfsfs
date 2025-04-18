@@ -1,0 +1,995 @@
+{% extends "Base/Base.j2" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ static('css/Base.css') }}">
+    <link rel="stylesheet" href="{{ static('css/FormContainer.css') }}">
+    <style>
+        /* Основные стили профиля */
+        .profile-container {
+            position: relative;
+            background-color: #7db875;
+            max-width: 900px;
+            width: 800px;
+            height: 300px;
+            border-radius: 34px;
+            border: 3px solid white;
+            padding: 30px;
+            box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            overflow: visible;
+            padding-bottom: 60px;
+        }
+        
+        .profile-section {
+            font-size: 20px;
+            font-family: 'Unbounded', regular;
+            font-weight: 300 !important;
+            color: white;
+            line-height: 1.2;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+        }
+        
+        .profile-info-item-text {
+            font-size: 24px !important;
+            text-align: left;
+        }
+        
+        .profile-info-item {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+            gap: 30px;
+        }
+        
+        .profile-info-details {
+            padding-top: 5px;
+            padding-left: 0;
+            text-align: left;
+            width: 60%;
+        }
+        
+      
+        
+        .profile-info-item-photo img, 
+        .profile-info-item-photo div {
+            border-radius: 18px !important;
+        }
+        
+        .profile-info-buttons {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        
+        .profile-info-button-delete,
+        .profile-info-button-logout,
+        .profile-info-button-apply {
+            font-family: 'Unbounded', regular;
+            font-weight: 300 !important;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .profile-info-button-delete {
+            background-color: #ff5f5f;
+            color: white;
+        }
+        
+        .profile-info-button-logout {
+            background-color: #fcb850;
+            color: white;
+        }
+        
+        .profile-info-button-apply {
+            background-color: #ffffff;
+            color: #8ae37e;
+            padding: 15px 45px;
+        }
+        
+        .profile-info-button-delete:hover {
+            background-color: #d32f2f;
+        }
+        
+        .profile-info-button-logout:hover {
+            background-color: #f57c00;
+        }
+        
+        .profile-info-button-apply:hover {
+            background-color: #388e3c;
+        }
+        
+        .photo-upload-area {
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .photo-upload-area input[type='file'] {
+            position: absolute;
+            opacity: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .photo-upload-hint {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            text-align: center;
+            padding: 5px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .photo-upload-area:hover .photo-upload-hint {
+            opacity: 1;
+        }
+        
+        .drag-over {
+            border: 2px dashed #007bff !important;
+        }
+        
+        /* Стили для модальных окон */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.modal-visible {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .modal-header {
+            margin-bottom: 15px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Unbounded', regular;
+            font-weight: 300;
+            transition: background-color 0.2s ease;
+        }
+        
+        .modal-btn-cancel {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        
+        .modal-btn-cancel:hover {
+            background-color: #d0d0d0;
+        }
+        
+        .modal-btn-confirm {
+            background-color: #ff5f5f;
+            color: white;
+        }
+        
+        .modal-btn-confirm:hover {
+            background-color: #ff3333;
+        }
+        
+        .modal-visible .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        /* Стили для редактирования никнейма */
+        .nickname-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .edit-icon {
+            font-size: 20px;
+            opacity: 0.8;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            transform: rotate(160deg);
+            position: absolute;
+            right: 0;
+            top: 50%;
+            margin-top: -10px;
+        }
+        
+        .edit-icon:hover {
+            opacity: 1;
+            transform: rotate(160deg) scale(1.1);
+        }
+        
+        .nickname-input {
+            display: none;
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-right: 5px;
+        }
+        
+        .nickname-text {
+            margin: 0;
+        }
+        
+        .profile-info-item-crypto {
+            margin-top: 10px;
+        }
+        
+        .crypto-container {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .crypto-container label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        #cryptoTokenInput {
+            display: none;
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        
+        /* Стили для редактируемых полей */
+        .editable-field {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+            padding-right: 30px;
+        }
+        
+        .editable-field-value {
+            font-size: 16px;
+            font-weight: 400;
+            color: white;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+        
+        .editable-field-input {
+            display: none;
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            margin-right: 10px;
+            flex-grow: 1;
+        }
+        
+        /* Поля с заголовками */
+        .editable-field-label, 
+        .field-label {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-right: 8px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .editable-field-container {
+            margin-bottom: 15px;
+        }
+        
+        /* Стили для других полей профиля */
+        .profile-info-item-email,
+        .profile-info-item-posts,
+        .profile-info-item-crypto {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .profile-info-item-email p,
+        .profile-info-item-posts p {
+            margin: 10px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Подсказка для области загрузки фото */
+        .photo-upload-area {
+            position: relative;
+        }
+        
+        .photo-upload-area::after {
+            content: 'Нажмите для изменения';
+            position: absolute;
+            bottom:-2px;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 1.5);
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            padding: 4px 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 0 0 16px 16px;
+        }
+        
+        .photo-upload-area:hover::after {
+            opacity: 1;
+        }
+        
+        .text-truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: 400;
+            color: white;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Адаптивные стили для разных устройств */
+        @media (max-width: 860px) {
+            .profile-container {
+                width: 90%;
+                max-width: 600px;
+                height: auto;
+                min-height: 350px;
+            }
+            
+            .profile-info-buttons {
+                position: relative;
+                bottom: 0;
+                right: 0;
+                justify-content: center;
+                margin-top: 30px;
+            }
+            
+            .profile-info-button-delete, 
+            .profile-info-button-logout, 
+            .profile-info-button-apply {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .profile-container {
+                padding: 15px;
+                border-radius: 24px;
+                height: auto;
+                background-color: #83c17b;
+            }
+            
+            .profile-info-item {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .profile-info-details {
+                width: 100%;
+                padding-left: 0;
+                padding-top: 15px;
+                text-align: center;
+                overflow: hidden;
+            }
+            
+         
+            
+            .profile-info-item-photo img, 
+            .profile-info-item-photo div {
+                width: 150px !important;
+                height: 150px !important;
+                border-radius: 14px !important;
+            }
+            
+           
+            
+            .editable-field-label,
+            .field-label {
+                text-align: center;
+                font-weight: 500;
+                color: #ffffff;
+                font-size: 15px;
+                margin-right: 5px;
+            }
+            
+            .editable-field-value,
+            .text-truncate {
+                font-size: 13px;
+                font-weight: 400;
+                padding: 4px 0;
+                position: relative;
+                z-index: 1;
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            }
+            
+            .profile-info-buttons {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+                position: static;
+                margin-top: 25px;
+            }
+            
+            .profile-info-button-delete, 
+            .profile-info-button-logout, 
+            .profile-info-button-apply {
+                width: 100%;
+                text-align: center;
+                padding: 14px 20px;
+                font-size: 16px;
+                font-weight: 500;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            
+            .profile-info-item-email p,
+            .profile-info-item-posts p {
+                margin: 8px 0;
+                font-size: 15px;
+                font-weight: 400;
+                padding: 4px 0;
+                color: rgba(255, 255, 255, 0.9);
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+            
+            .edit-icon {
+                position: relative;
+                right: auto;
+                font-size: 18px;
+                margin-top: 0;
+                margin-left: 5px;
+                display: inline-block;
+                opacity: 1;
+            }
+            
+       
+        }
+        
+        @media (max-width: 400px) {
+            .profile-container {
+                padding: 12px;
+                border-radius: 18px;
+                
+            }
+            
+            .modal-content {
+                width: 90%;
+                padding: 15px;
+            }
+            
+            .profile-info-item-photo img, 
+            .profile-info-item-photo div {
+                width: 180px !important;
+                height: 180px !important;
+                border-radius: 12px !important;
+            }
+            
+            .profile-info-item-photo div {
+                font-size: 36px !important;
+            }
+            
+            .editable-field-value {
+                width: auto;
+                font-size: 13px;
+                text-align: center;
+            }
+            
+            .editable-field-label {
+                font-size: 13px;
+            }
+            
+            .text-truncate {
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                text-align: center;
+                font-size: 13px;
+            }
+            
+            .profile-info-item-email p,
+            .profile-info-item-posts p {
+                font-size: 13px;
+                text-align: center;
+            }
+            
+            .profile-info-button-delete, 
+            .profile-info-button-logout, 
+            .profile-info-button-apply {
+                padding: 12px 15px;
+                font-size: 15px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="main-info">
+        <div class="main-info-text">
+            <h1 class="main-title">ЛИЧНЫЙ КАБИНЕТ</h1>
+            <p class="main-description">Добро пожаловать в твой уголок НЕстраховой. Здесь ты можешь управлять своими историями и настроить профиль 🛖.</p>
+        </div>
+
+        <div class="profile-container">
+            <div class="profile-section">
+                <div class="profile-info">
+                    <form method="POST" enctype="multipart/form-data" id="profileForm">
+                        {{ csrf_input }}
+                        <input type="hidden" name="action" value="update_profile">
+                        <div class="profile-info-item">
+                            <div class="profile-info-item-photo photo-upload-area" id="photoUploadArea" style="cursor: pointer;">
+                                <div id="photoPreview">
+                                {% if profile.photo %}
+                                    <img src="{{ profile.photo.url }}" alt="Фото профиля" style="width: 160px; height: 160px; border-radius: 16px; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 160px; height: 160px; background-color: #ccc; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 36px; color: #666;">
+                                        {{ (profile.nickname|default("?"))|first|upper }}
+                                    </div>
+                                {% endif %}
+                                </div>
+                                <input type="hidden" name="delete_photo" id="deletePhotoFlag" value="0">
+                                <input type="file" name="photo" id="photoInput" accept="image/*" style="display: none;">
+                            </div>
+                            <div class="profile-info-details">
+                                <!-- Никнейм -->
+                                <div class="editable-field-container">
+                                    <div class="editable-field" id="nickname-field">
+                                        <span class="editable-field-label">Никнейм:</span>
+                                        <span class="editable-field-value">{{ profile.nickname }}</span>
+                                        <input type="text" name="nickname" value="{{ profile.nickname }}" class="editable-field-input">
+                                        <span class="edit-icon" title="Редактировать">✐</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email (не редактируемый здесь) -->
+                                <div class="profile-info-item-email">
+                                    <p><span class="field-label">Email:</span> <span class="text-truncate" title="{{ email }}">{{ email }}</span></p> 
+                                </div>
+                                
+                                <!-- Публикации (не редактируемый) -->
+                                <div class="profile-info-item-posts">
+                                    <p><span class="field-label">Публикаций:</span> <span class="text-truncate" title="{{ posts_count }}">{{ posts_count }}</span></p>
+                                </div>
+                                
+                                <!-- Криптовалюта -->
+                                <div class="editable-field-container">
+                                    <div class="editable-field" id="crypto-field">
+                                        <span class="editable-field-label">Криптовалюта:</span>
+                                        <span class="editable-field-value">{{ profile.crypto_token }}</span>
+                                        <input type="text" name="crypto_token" value="{{ profile.crypto_token }}" class="editable-field-input">
+                                        <span class="edit-icon" title="Редактировать">✐</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="profile-info-story">
+                         
+                        </div>
+                         <div class="profile-info-buttons">
+                           <button type="button" onclick="window.location.href='{{ url('logout') }}'" class="profile-info-button-logout">Выйти</button>
+                           <button id="deleteAccountBtn" type="button" class="profile-info-button-delete">Удалить аккаунт</button>
+                           <button type="submit" class="profile-info-button-apply">Применить</button>
+                         </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно подтверждения удаления аккаунта -->
+    <div id="deleteAccountModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModalBtn">&times;</button>
+            <div class="modal-header">
+                <h3 class="modal-title">Удаление аккаунта</h3>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-buttons">
+                <button id="cancelDeleteBtn" class="modal-btn modal-btn-cancel">Нет</button>
+                <form method="POST" id="deleteAccountForm" action="{{ url('profile') }}">
+                    {{ csrf_input }}
+                    <input type="hidden" name="action" value="delete_account">
+                    <button type="submit" class="modal-btn modal-btn-confirm">Да, удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для загрузки фото -->
+    <div id="photoUploadModal" class="modal-overlay">
+        <div class="modal-content" style="width: 80%; max-width: 600px; background-color: #7db875; border-radius: 34px; border: 3px solid white; padding: 20px; position: relative;">
+            <button class="modal-close" id="closePhotoModalBtn" style="position: absolute; top: 15px; right: 20px; color: white; font-size: 28px; cursor: pointer; background: none; border: none;">&times;</button>
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: white; text-align: center; margin-top: 10px; margin-bottom: 20px;">Загрузка фото профиля</h3>
+            </div>
+            <div class="modal-body">
+                <div class="file-upload-label" style="color: white; display: block; text-align: center; padding: 40px; font-size: 16px; margin: 40px auto; max-width: 80%; border: 2px dashed white; border-radius: 20px; background-color: rgba(255, 255, 255, 0.1); cursor: pointer;" id="photoDropArea">
+                    Перетащите фото сюда или нажмите для выбора
+                </div>
+                <div id="photoModalPreview" style="display: flex; justify-content: center; margin: 20px 0;"></div>
+            </div>
+            <div class="modal-buttons" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+                <button id="deletePhotoModalBtn" class="modal-btn" style="background-color: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Удалить фото</button>
+                <button id="applyPhotoBtn" class="modal-btn" style="background-color: white; color: #7db875; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Применить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы профиля
+            const photoInput = document.getElementById('photoInput');
+            const photoPreview = document.getElementById('photoPreview');
+            const deletePhotoFlag = document.getElementById('deletePhotoFlag');
+            const photoUploadArea = document.getElementById('photoUploadArea');
+            
+            // Элементы модального окна
+            const photoUploadModal = document.getElementById('photoUploadModal');
+            const closePhotoModalBtn = document.getElementById('closePhotoModalBtn');
+            const photoDropArea = document.getElementById('photoDropArea');
+            const photoModalPreview = document.getElementById('photoModalPreview');
+            const deletePhotoModalBtn = document.getElementById('deletePhotoModalBtn');
+            const applyPhotoBtn = document.getElementById('applyPhotoBtn');
+            
+            // Временное хранение выбранного файла
+            let selectedFile = null;
+            let photoDeleted = false;
+            
+            // Показать модальное окно загрузки фото при клике на область фото
+            photoUploadArea.addEventListener('click', function() {
+                photoUploadModal.classList.add('modal-visible');
+                // Обновляем превью в модальном окне на основе текущего фото в профиле
+                updateModalPreview();
+                // Обновляем состояние кнопки удаления
+                updateDeleteButtonState();
+            });
+            
+            // Обновляем превью в модальном окне
+            function updateModalPreview() {
+                if (selectedFile) {
+                    // Если уже есть выбранный файл, показываем его
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photoModalPreview.innerHTML = `
+                            <div style="position: relative; width: 200px; height: 200px;">
+                                <img src="${e.target.result}" style="width: 100%; height: 100%; border-radius: 16px; object-fit: cover;">
+                            </div>
+                        `;
+                    };
+                    reader.readAsDataURL(selectedFile);
+                } else if (photoDeleted) {
+                    // Если фото было удалено
+                    const nickname = '{{ profile.nickname|default("?") }}';
+                    const firstLetter = nickname.charAt(0).toUpperCase();
+                    photoModalPreview.innerHTML = `
+                        <div style="width: 200px; height: 200px; background-color: #ccc; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 72px; color: #666;">
+                            ${firstLetter}
+                        </div>
+                    `;
+                } else {
+                    // Иначе показываем текущее фото из профиля
+                    {% if profile.photo %}
+                        photoModalPreview.innerHTML = `
+                            <div style="position: relative; width: 200px; height: 200px;">
+                                <img src="{{ profile.photo.url }}" style="width: 100%; height: 100%; border-radius: 16px; object-fit: cover;">
+                            </div>
+                        `;
+                    {% else %}
+                        const nickname = '{{ profile.nickname|default("?") }}';
+                        const firstLetter = nickname.charAt(0).toUpperCase();
+                        photoModalPreview.innerHTML = `
+                            <div style="width: 200px; height: 200px; background-color: #ccc; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 72px; color: #666;">
+                                ${firstLetter}
+                            </div>
+                        `;
+                    {% endif %}
+                }
+            }
+            
+            // Обновление состояния кнопки удаления
+            function updateDeleteButtonState() {
+                // Показываем кнопку удаления только если есть фото для удаления
+                if (({% if profile.photo %}true{% else %}false{% endif %} && !photoDeleted) || selectedFile) {
+                    deletePhotoModalBtn.style.display = 'block';
+                } else {
+                    deletePhotoModalBtn.style.display = 'none';
+                }
+            }
+            
+            // Клик на область загрузки в модальном окне
+            photoDropArea.addEventListener('click', function() {
+                photoInput.click();
+            });
+            
+            // Обработка выбора файла
+            photoInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    selectedFile = this.files[0];
+                    photoDeleted = false;
+                    updateModalPreview();
+                    updateDeleteButtonState();
+                }
+            });
+            
+            // Drag & Drop для фото
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                photoDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                photoDropArea.addEventListener(eventName, function() {
+                    photoDropArea.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                    photoDropArea.style.borderColor = '#99ff8b';
+                });
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                photoDropArea.addEventListener(eventName, function() {
+                    photoDropArea.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    photoDropArea.style.borderColor = 'white';
+                });
+            });
+            
+            photoDropArea.addEventListener('drop', function(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files && files[0]) {
+                    selectedFile = files[0];
+                    photoDeleted = false;
+                    updateModalPreview();
+                    updateDeleteButtonState();
+                }
+            });
+            
+            // Удаление фото
+            deletePhotoModalBtn.addEventListener('click', function() {
+                selectedFile = null;
+                photoDeleted = true;
+                deletePhotoFlag.value = '1';
+                updateModalPreview();
+                updateDeleteButtonState();
+            });
+            
+            // Применение изменений
+            applyPhotoBtn.addEventListener('click', function() {
+                if (selectedFile) {
+                    // Если выбран новый файл, обновляем превью и скрытый input
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photoPreview.innerHTML = `<img src="${e.target.result}" alt="Фото профиля" style="width: 160px; height: 160px; border-radius: 16px; object-fit: cover;">`;
+                    };
+                    reader.readAsDataURL(selectedFile);
+                    
+                    // Создаем объект DataTransfer и добавляем файл
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(selectedFile);
+                    photoInput.files = dataTransfer.files;
+                    
+                    // Снимаем флаг удаления
+                    deletePhotoFlag.value = '0';
+                } else if (photoDeleted) {
+                    // Если фото было удалено, показываем дефолтное изображение
+                    const nickname = '{{ profile.nickname|default("?") }}';
+                    const firstLetter = nickname.charAt(0).toUpperCase();
+                    photoPreview.innerHTML = `
+                        <div style="width: 160px; height: 160px; background-color: #ccc; border-radius: 16px; display: flex; justify-content: center; align-items: center; font-size: 36px; color: #666;">
+                            ${firstLetter}
+                        </div>
+                    `;
+                    // Очищаем input file
+                    photoInput.value = '';
+                    
+                    // Устанавливаем флаг для удаления фото на сервере
+                    deletePhotoFlag.value = '1';
+                }
+                
+                // Закрываем модальное окно
+                closePhotoModal();
+            });
+            
+            // Закрытие модального окна
+            function closePhotoModal() {
+                photoUploadModal.classList.remove('modal-visible');
+            }
+            
+            // Обработчики для закрытия модального окна
+            closePhotoModalBtn.addEventListener('click', closePhotoModal);
+            
+            // Закрытие модального окна при клике за его пределами
+            photoUploadModal.addEventListener('click', function(e) {
+                if (e.target === photoUploadModal) {
+                    closePhotoModal();
+                }
+            });
+            
+            // Закрытие модального окна по клавише Esc
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (photoUploadModal.classList.contains('modal-visible')) {
+                        closePhotoModal();
+                    }
+                }
+            });
+            
+            // Установка начального состояния кнопки удаления в модальном окне
+            updateDeleteButtonState();
+            
+            // Функция для обработки редактируемых полей
+            function setupEditableField(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (!field) return;
+                
+                const valueEl = field.querySelector('.editable-field-value');
+                const inputEl = field.querySelector('.editable-field-input');
+                const editIcon = field.querySelector('.edit-icon');
+                
+                // Показать поле ввода при клике на иконку редактирования
+                editIcon.addEventListener('click', function() {
+                    valueEl.style.display = 'none';
+                    inputEl.style.display = 'block';
+                    inputEl.focus();
+                    editIcon.style.display = 'none';
+                });
+                
+                // Скрыть поле ввода и показать значение при потере фокуса
+                inputEl.addEventListener('blur', function() {
+                    valueEl.textContent = inputEl.value;
+                    valueEl.style.display = 'inline';
+                    inputEl.style.display = 'none';
+                    editIcon.style.display = 'inline';
+                });
+                
+                // Обновить значение при нажатии Enter
+                inputEl.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // Предотвращаем отправку формы
+                        valueEl.textContent = inputEl.value;
+                        valueEl.style.display = 'inline';
+                        inputEl.style.display = 'none';
+                        editIcon.style.display = 'inline';
+                    }
+                });
+            }
+            
+            // Настраиваем редактируемые поля
+            setupEditableField('nickname-field');
+            setupEditableField('crypto-field');
+            
+            // Обработка модального окна для удаления аккаунта
+            const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+            const deleteAccountModal = document.getElementById('deleteAccountModal');
+            const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            
+            deleteAccountBtn.addEventListener('click', function() {
+                deleteAccountModal.classList.add('modal-visible');
+                setTimeout(() => {
+                    document.addEventListener('keydown', escCloseHandler);
+                }, 100);
+            });
+            
+            // Обработчик закрытия модального окна
+            function closeModal() {
+                deleteAccountModal.classList.remove('modal-visible');
+                document.removeEventListener('keydown', escCloseHandler);
+            }
+            
+            // Закрытие по клавише Esc
+            function escCloseHandler(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            }
+            
+            cancelDeleteBtn.addEventListener('click', closeModal);
+            closeModalBtn.addEventListener('click', closeModal);
+            
+            // Закрытие модального окна при клике за его пределами
+            deleteAccountModal.addEventListener('click', function(e) {
+                if (e.target === deleteAccountModal) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+{% endblock %}
+

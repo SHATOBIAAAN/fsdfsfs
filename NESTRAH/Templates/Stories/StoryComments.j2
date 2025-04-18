@@ -1,0 +1,587 @@
+{% extends "base/base.j2" %}
+
+{% block head %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
+    
+    <link rel="stylesheet" href="{{ static('css/Comments.css') }}">
+    
+    <style>
+        /* Скрываем скроллбар на мобильных устройствах */
+        @media (max-width: 768px) {
+            .comments-list::-webkit-scrollbar,
+            .comments-list-wrapper::-webkit-scrollbar {
+                display: none;
+                width: 0;
+            }
+            
+            .comments-list,
+            .comments-list-wrapper {
+                -ms-overflow-style: none;  /* IE и Edge */
+                scrollbar-width: none;  /* Firefox */
+            }
+            
+            /* Центрирование заголовка на мобильных устройствах */
+            .mobile-title {
+                text-align: center;
+                width: 100%;
+                position: absolute;
+                left: 0;
+                padding: 0 10px; /* Отступы по бокам, чтобы не перекрывать кнопку назад */
+            }
+            
+            /* Позиционирование кнопки назад */
+            .mobile-back {
+                position: relative;
+                z-index: 10; /* Над заголовком */
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<!-- Мобильная шапка -->
+<div class="mobile-header">
+    <a href="javascript:void(0)" id="mobileBackButton" class="mobile-back">
+      ↩︎
+
+    </a>
+    <h1 class="mobile-title">{{ story.title }}</h1>
+</div>
+
+<div class="main-info">
+    <div class="main-info-text">
+    </div>
+    <div class="container-comments">
+        <p class="back-link-text"><a href="javascript:void(0)" id="backButton" class="back-link">Вернуться назад ↩︎</a></p>
+        
+        <div class="container comment-info">
+            <p class="comment-title">{{ story.title }}</p>
+          
+        </div>
+        
+        <div class="comment-all">
+            <div class="container comment-container">
+                <div class="comments-header"><p>Комментарии всего: {{ comments|length }}</p></div>
+                <div class="comments-list-wrapper">
+                    <div class="comments-list">
+                        {% if comments %}
+                            {% for comment in comments %}
+                                <div class="comment-item">
+                                    <div class="comment-layout">
+                                        <div class="comment-avatar">
+                                            {% if comment.user.profile.photo %}
+                                                <img src="{{ comment.user.profile.photo.url }}" alt="Avatar" class="user-avatar">
+                                            {% else %}
+                                                <div class="avatar-placeholder" style="background-color: #ccc; color: #666; font-size: 20px;">{{ comment.user.profile.nickname[:1]|upper }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="comment-body">
+                                            <div class="comment-header">
+                                                <div class="comment-user">
+                                                    <span class="user-name">{{ comment.user.profile.nickname|truncate(35) }}</span>
+                                                </div>
+                                                
+                                            </div>
+                                            <div class="comment-content">{{ comment.content }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-comments">Комментариев пока нет. Будьте первым!</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="comments-form-container">
+                    {% if request.user.is_authenticated %}
+                        <form action="{{ url('add_comment', story.id) }}" method="POST" class="comments-form" id="commentForm">
+                            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                            <div class="comments-input-group">
+                                <textarea name="content" class="comments-textarea" placeholder="Напишите сообщение..." id="commentText"></textarea>
+                                <button type="submit" class="comments-submit-button">↑</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="login-prompt">
+                            <p>Войдите или зарегистрируйтесь, чтобы оставить комментарий</p>
+                            <a href="{{ url('login') }}">Войти</a> или 
+                            <a href="{{ url('register') }}">Зарегистрироваться</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Получаем параметры URL при загрузке страницы
+        const urlParams = new URLSearchParams(window.location.search);
+        const slideIndex = urlParams.get('slide_index');
+        const fromStoryId = urlParams.get('from_story_id');
+        const categoriesParam = urlParams.get('categories');
+        const storyId = {{ story.id }};
+        const referrer = document.referrer;
+        
+        // Сохраняем тип страницы и URL только если это не страница комментариев
+        if (!referrer.includes('/comments/')) {
+            const pageType = referrer.includes(`/story/${storyId}`) ? 'story_detail' : 
+                            referrer.includes('/stories/') ? 'story_list' : null;
+            sessionStorage.setItem('came_from_page', pageType);
+            sessionStorage.setItem('original_url', referrer);
+        }
+        
+        // Сохраняем данные в localStorage
+        if (slideIndex) {
+            localStorage.setItem('lastSlideIndex', slideIndex);
+        }
+        
+        // Сохраняем категории, если они есть
+        if (categoriesParam) {
+            localStorage.setItem('selectedCategories', categoriesParam);
+        }
+        
+        // Сохраняем оригинальный реферер при первой загрузке страницы
+        if (!sessionStorage.getItem('originalReferrer')) {
+            sessionStorage.setItem('originalReferrer', document.referrer);
+        }
+        
+        const commentForm = document.getElementById('commentForm');
+        const commentText = document.getElementById('commentText');
+        const commentsFormContainer = document.querySelector('.comments-form-container');
+        const commentsList = document.querySelector('.comments-list');
+        const commentsListWrapper = document.querySelector('.comments-list-wrapper');
+        const mainInfo = document.querySelector('.main-info');
+        const isMobile = window.innerWidth < 768;
+        
+        // Определяем, является ли устройство iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
+        // Переменная для хранения высоты клавиатуры
+        let keyboardHeight = 0;
+        
+        // Функция для скрытия адресной строки на мобильных устройствах
+        function hideAddressBar() {
+            if (isMobile) {
+                if (!document.documentElement.scrollTop) {
+                    window.scrollTo(0, 1);
+                }
+            }
+        }
+        
+        // Функция для установки правильной высоты комментариев
+        function setCommentsHeight() {
+            if (isMobile && commentsListWrapper) {
+                // Вычисляем высоту комментариев с учетом клавиатуры и других элементов
+                const commentHeaderHeight = document.querySelector('.comments-header')?.offsetHeight || 0;
+                const formHeight = commentsFormContainer?.offsetHeight || 0;
+                
+                // Если клавиатура открыта
+                if (document.body.classList.contains('keyboard-open')) {
+                    commentsListWrapper.style.height = `calc(100% - ${commentHeaderHeight}px - ${formHeight}px - ${keyboardHeight}px)`;
+                } else {
+                    commentsListWrapper.style.height = `calc(100% - ${commentHeaderHeight}px - ${formHeight}px)`;
+                }
+            }
+        }
+        
+        // Пытаемся скрыть адресную строку только на мобильных устройствах
+        if (isMobile) {
+            window.addEventListener('load', hideAddressBar);
+            window.addEventListener('orientationchange', hideAddressBar);
+            
+            // Сбрасываем флаг отправки формы
+            sessionStorage.removeItem('formSubmitted');
+            
+            // Инициализируем высоту комментариев
+            setTimeout(setCommentsHeight, 100);
+            
+            // Обработчик события изменения размера окна (для определения клавиатуры)
+            window.addEventListener('resize', function() {
+                if (isIOS) {
+                    // iOS определение клавиатуры
+                    const newWindowHeight = window.innerHeight;
+                    const originalWindowHeight = window.outerHeight;
+                    const heightDiff = originalWindowHeight - newWindowHeight;
+                    
+                    if (heightDiff > 100) {
+                        // Клавиатура открыта
+                        keyboardHeight = heightDiff;
+                        document.body.classList.add('keyboard-open');
+                        if (commentsListWrapper) {
+                            commentsListWrapper.classList.add('keyboard-active');
+                            document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+                        }
+                    } else {
+                        // Клавиатура закрыта
+                        keyboardHeight = 0;
+                        document.body.classList.remove('keyboard-open');
+                        if (commentsListWrapper) {
+                            commentsListWrapper.classList.remove('keyboard-active');
+                            document.documentElement.style.setProperty('--keyboard-height', '0px');
+                        }
+                    }
+                } else {
+                    // Android определение клавиатуры
+                    const viewportHeight = window.innerHeight;
+                    const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
+                    
+                    if (viewportHeight - visualViewportHeight > 100) {
+                        // Клавиатура открыта
+                        keyboardHeight = viewportHeight - visualViewportHeight;
+                        document.body.classList.add('keyboard-open');
+                        if (commentsListWrapper) {
+                            commentsListWrapper.classList.add('keyboard-active');
+                            document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+                        }
+                    } else {
+                        // Клавиатура закрыта
+                        keyboardHeight = 0;
+                        document.body.classList.remove('keyboard-open');
+                        if (commentsListWrapper) {
+                            commentsListWrapper.classList.remove('keyboard-active');
+                            document.documentElement.style.setProperty('--keyboard-height', '0px');
+                        }
+                    }
+                }
+                
+                // Обновляем высоту комментариев
+                setCommentsHeight();
+            });
+        }
+        
+        // Функция для автоматического изменения высоты textarea
+        function autoResizeTextarea() {
+            if (!commentText) return;
+            
+            // Сохраняем исходную высоту
+            const originalHeight = commentText.style.height;
+            
+            // Сбрасываем высоту сначала
+            commentText.style.height = 'auto';
+            
+            // Устанавливаем новую высоту исходя из содержимого
+            // Для мобильных устройств ограничиваем высоту
+            const maxHeight = isMobile ? 100 : 150;
+            const newHeight = Math.min(commentText.scrollHeight, maxHeight);
+            commentText.style.height = newHeight + 'px';
+            
+            // Если высота изменилась и больше минимальной, добавляем класс expanded
+            const minHeight = isMobile ? 40 : 60;
+            if (newHeight > minHeight && commentsFormContainer) {
+                commentsFormContainer.classList.add('expanded');
+            } else if (commentsFormContainer) {
+                commentsFormContainer.classList.remove('expanded');
+            }
+            
+            // Обновляем высоту комментариев при изменении высоты textarea
+            if (isMobile) {
+                setTimeout(setCommentsHeight, 0);
+            }
+        }
+        
+        // Функция для прокрутки комментариев
+        function scrollToLastComment() {
+            // Всегда устанавливаем скролл вверху, и на мобильных, и на ПК
+            if (isMobile) {
+                if (commentsListWrapper) {
+                    commentsListWrapper.scrollTop = 0;
+                }
+            } else {
+                if (commentsList) {
+                    commentsList.scrollTop = 0;
+                }
+            }
+        }
+        
+        // Добавляем обработчики для тегов категорий
+        document.querySelectorAll('.story-category-tag').forEach(function(tag) {
+            tag.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Получаем ID категории из ссылки
+                const href = this.getAttribute('href');
+                const urlObj = new URL(href, window.location.origin);
+                const categoryId = urlObj.searchParams.get('categories');
+                
+                if (categoryId) {
+                    // Сохраняем категорию в localStorage
+                    localStorage.setItem('selectedCategories', categoryId);
+                    console.log('Сохранена категория:', categoryId);
+                    
+                    // Переходим по ссылке
+                    window.location.href = href;
+                }
+            });
+        });
+        
+        // Прокручиваем к последнему комментарию при загрузке
+        scrollToLastComment();
+        
+        if (commentText) {
+            // Автоматическое изменение высоты при вводе
+            commentText.addEventListener('input', autoResizeTextarea);
+            
+            // Инициализируем начальную высоту
+            autoResizeTextarea();
+            
+            commentText.addEventListener('keydown', function(event) {
+                // Проверяем, была ли нажата клавиша Enter без Shift
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault(); // Предотвращаем стандартное поведение (перенос строки)
+                    
+                    // Проверяем, что комментарий не пустой
+                    if (commentText.value.trim() !== '') {
+                        commentForm.submit(); // Отправляем форму
+                    }
+                } else if (event.key === 'Enter' && event.shiftKey) {
+                    // При Shift+Enter автоматически изменяем размер после добавления строки
+                    setTimeout(autoResizeTextarea, 0);
+                }
+            });
+            
+            // На мобильных добавляем специальные обработчики
+            if (isMobile) {
+                // Обработчик события фокуса для мобильных устройств
+                commentText.addEventListener('focus', function() {
+                    // Добавляем класс для обозначения активной клавиатуры
+                    document.body.classList.add('keyboard-open');
+                    
+                    // Прокручиваем к полю ввода с задержкой
+                    setTimeout(function() {
+                        // Обновляем позицию элементов
+                        setCommentsHeight();
+                        
+                        // На iOS добавляем увеличенную задержку
+                        const scrollDelay = isIOS ? 500 : 300;
+                        setTimeout(() => {
+                            // Пытаемся сохранить положение прокрутки при фокусе
+                            const scrollPos = commentsListWrapper.scrollTop;
+                            commentText.scrollIntoView({ block: 'end', behavior: 'smooth' });
+                            commentsFormContainer.classList.add('expanded');
+                            // Восстанавливаем положение прокрутки после фокуса
+                            setTimeout(() => {
+                                if (!isIOS) { // На iOS это может не работать
+                                    commentsListWrapper.scrollTop = scrollPos;
+                                }
+                            }, 100);
+                        }, scrollDelay);
+                    }, 100);
+                });
+                
+                // Обработчик события потери фокуса
+                commentText.addEventListener('blur', function() {
+                    // На мобильных устройствах уменьшаем поле если оно пустое
+                    if (commentText.value.trim() === '') {
+                        commentsFormContainer.classList.remove('expanded');
+                    }
+                    
+                    // Убираем класс клавиатуры с задержкой
+                    setTimeout(() => {
+                        document.body.classList.remove('keyboard-open');
+                        setCommentsHeight();
+                    }, 300);
+                });
+            }
+        }
+        
+        // Добавляем прослушиватель события изменения размера окна
+        window.addEventListener('resize', function() {
+            // Обновляем флаг мобильного устройства
+            const newIsMobile = window.innerWidth < 768;
+            
+            // Если изменился тип устройства, обновляем страницу
+            if (newIsMobile !== isMobile) {
+                window.location.reload();
+            } else if (commentText && !document.body.classList.contains('keyboard-open')) {
+                autoResizeTextarea();
+            }
+        });
+        
+        // Обработка кнопок "назад"
+        const backButton = document.getElementById('backButton');
+        const mobileBackButton = document.getElementById('mobileBackButton');
+
+        function goBack(e) {
+            e.preventDefault();
+            
+            const pageType = sessionStorage.getItem('came_from_page');
+            const originalUrl = sessionStorage.getItem('original_url');
+            const storyId = {{ story.id }};
+            const slideIndex = localStorage.getItem('lastSlideIndex');
+            const savedCategories = localStorage.getItem('selectedCategories');
+            
+            let returnUrl;
+            
+            if (pageType === 'story_detail') {
+                // Если пришли со страницы деталей истории, возвращаемся на нее
+                returnUrl = `/story/${storyId}/`;
+            } else if (pageType === 'story_list' && originalUrl && !originalUrl.includes('/comments/')) {
+                // Если пришли со списка историй, возвращаемся на него
+                returnUrl = originalUrl;
+            } else {
+                // По умолчанию возвращаемся на список историй
+                returnUrl = '/stories/';
+            }
+            
+            try {
+                const urlObj = new URL(returnUrl, window.location.origin);
+                
+                // Добавляем параметры только если возвращаемся на список историй
+                if (pageType === 'story_list' || !pageType) {
+                    if (slideIndex) {
+                        urlObj.searchParams.set('slide_index', slideIndex);
+                        urlObj.searchParams.set('from_story_id', storyId);
+                    }
+                    
+                    if (savedCategories) {
+                        urlObj.searchParams.set('categories', savedCategories);
+                    }
+                }
+                
+                returnUrl = urlObj.toString();
+            } catch (e) {
+                console.error('Ошибка при создании URL:', e);
+            }
+            
+            // Очищаем сохраненные данные
+            sessionStorage.removeItem('came_from_page');
+            sessionStorage.removeItem('original_url');
+            
+            // Переходим на нужную страницу
+            window.location.href = returnUrl;
+        }
+
+        if (backButton) backButton.addEventListener('click', goBack);
+        if (mobileBackButton) mobileBackButton.addEventListener('click', goBack);
+        
+        // Оптимизации только для мобильных устройств
+        if (isMobile) {
+            // Оптимизация для iOS - фикс проблемы с виртуальной клавиатурой
+            if (isIOS) {
+                // Устанавливаем viewport для предотвращения масштабирования
+                const viewportMeta = document.querySelector('meta[name="viewport"]');
+                if (viewportMeta) {
+                    viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+                }
+                
+                // Более безопасная оптимизация для iOS
+                document.documentElement.style.webkitOverflowScrolling = 'touch';
+                
+                // Фикс для правильного скроллинга на iOS
+                document.addEventListener('touchmove', function(e) {
+                    if (e.target === commentText || commentText.contains(e.target)) {
+                        e.stopPropagation();
+                    }
+                }, { passive: false });
+            }
+            
+            // Корректная обработка событий прокрутки для предотвращения проблем с клавиатурой
+            if (commentsListWrapper) {
+                // Предотвращаем скролл основной страницы, но разрешаем скролл списка комментариев
+                document.body.addEventListener('touchmove', function(e) {
+                    // Проверяем, происходит ли скролл внутри списка комментариев или текстового поля
+                    const isInCommentsList = commentsListWrapper.contains(e.target);
+                    const isInTextField = commentText && (e.target === commentText || commentText.contains(e.target));
+                    
+                    if (!isInCommentsList && !isInTextField) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+        }
+        
+        if (commentForm) {
+            commentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const content = commentText.value.trim();
+                if (!content) {
+                    return;
+                }
+                
+                // Получаем CSRF токен
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // Создаем FormData
+                const formData = new FormData(commentForm);
+                
+                // Отправляем запрос
+                fetch(commentForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Очищаем поле ввода
+                        commentText.value = '';
+                        autoResizeTextarea();
+                        
+                        // Создаем новый комментарий
+                        const commentHTML = `
+                            <div class="comment-item">
+                                <div class="comment-layout">
+                                    <div class="comment-avatar">
+                                        ${data.comment.user_photo ? 
+                                            `<img src="${data.comment.user_photo}" alt="Avatar" class="user-avatar">` :
+                                            `<div class="avatar-placeholder" style="background-color: #ccc; color: #666; font-size: 20px;">${data.comment.user_initial}</div>`
+                                        }
+                                    </div>
+                                    <div class="comment-body">
+                                        <div class="comment-header">
+                                            <div class="comment-user">
+                                                <span class="user-name">${data.comment.user_nickname}</span>
+                                            </div>
+                                        </div>
+                                        <div class="comment-content">${data.comment.content}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Добавляем комментарий в начало списка
+                        const commentsList = document.querySelector('.comments-list');
+                        const noComments = commentsList.querySelector('.no-comments');
+                        
+                        if (noComments) {
+                            // Если нет комментариев, удаляем сообщение об их отсутствии
+                            noComments.remove();
+                        }
+                        
+                        // Вставляем новый комментарий в начало списка
+                        commentsList.insertAdjacentHTML('afterbegin', commentHTML);
+                        
+                        // Обновляем счетчик комментариев
+                        const commentsCount = document.querySelector('.comments-header p');
+                        const currentCount = parseInt(commentsCount.textContent.match(/\d+/)[0]) + 1;
+                        commentsCount.textContent = `Комментарии всего: ${currentCount}`;
+                        
+                        // Прокручиваем к новому комментарию
+                        const newComment = commentsList.firstElementChild;
+                        newComment.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        // Показываем сообщение об ошибке
+                        alert(data.message || 'Произошла ошибка при отправке комментария');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при отправке комментария');
+                });
+            });
+        }
+    });
+</script>
+
+{% endblock %} 

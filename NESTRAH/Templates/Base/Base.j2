@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#87e37b">
+    <link rel="icon" type="image/svg+xml" href="{{ static('favicon/favicon.svg') }}">
+    <link rel="alternate icon" type="image/x-icon" href="{{ static('favicon/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ static('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ static('favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ static('favicon/apple-touch-icon.png') }}">
+    <title>{% block title %}NESTRAH{% endblock %}</title>
+    <link rel="stylesheet" href="{{ static('css/Base.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="body">
+    <header class="header">
+        <div class="mobile-menu-toggle" id="mobileMenuToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        
+        <a href="{{ url('MainPage') }}" class="logo mobile-logo-center">NESTRAH</a>
+        
+        <nav>
+            <ul class="nav" id="mainNav">
+                <li class="nav__item desktop-only"><a class="logo" href="{{ url('MainPage') }}">NESTRAH</a></li>
+                <li class="nav__item"><a class="nav__link" href="{{ url('story_list') }}">Список историй</a></li>
+                <li class="nav__item"><a class="nav__link " href="{{ url('new_story') }}">Новая история</a></li>
+                <li class="nav__item"><a class="nav__link token-link" href="{{ get_site_settings(request)['token_url'] }}" target="_blank">Купить токен</a></li>
+                <li class="nav__item">
+                    {% if request.user.is_authenticated %}
+                        {% if request.user.profile is defined and request.user.profile %}
+                            {% set user_profile = request.user.profile %}
+                            <a href="{{ url('profile') }}" class="nav__profile-link">
+                                {% if user_profile and user_profile.photo %}
+                                <span class="nav__profile-photo">
+                                    <img src="{{ user_profile.photo.url }}" alt="Фото профиля">
+                                </span>
+                                {% endif %}
+                                <span class="nav__profile-text">Профиль</span>
+                            </a>
+                        {% else %}
+                            <a href="{{ url('profile') }}" class="nav__profile-link">
+                                <span class="nav__profile-text">Профиль</span>
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a class="nav__link button" href="{{ url('login') }}">Вход</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+    <div class="glow-circle"></div>
+    <div class="glow-circle glow-circle-2"></div>
+    <div class="glow-circle glow-circle-3"></div>
+    <div class="glow-circle glow-circle-4"></div>
+    
+    <script src="{{ static('js/Base.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

@@ -1,0 +1,410 @@
+{% extends "base/base.j2" %}
+
+
+{% block head %}
+    <link rel="stylesheet" href="{{ static('css/MainPage.css') }}">
+    <link rel="stylesheet" href="{{ static('css/FormContainer.css') }}">
+    <link rel="stylesheet" href="{{ static('css/StoryList.css') }}">
+    <link rel="stylesheet" href="{{ static('css/NewStory.css') }}">
+{% endblock %}
+
+{% block content %}
+    <!-- Всплывающее уведомление о модерации -->
+    <div class="notification-popup" id="moderationNotification">
+        <div class="notification-icon">✓</div>
+        <div class="notification-content">
+            <div class="notification-title">История отправлена на модерацию</div>
+            <div class="notification-message">Ваша история будет опубликована после проверки администратором</div>
+            <div class="notification-click-hint">Нажмите, чтобы перейти в профиль</div>
+        </div>
+        <div class="notification-close" id="closeNotification">&times;</div>
+    </div>
+    
+    <div class="main-info">
+        <div class="main-info-text">
+        <h1 class="main-title">ЛЕНТА СЛУЧАЕВ</h1>
+        <p class="main-description">Здесь собраны самые дикие,  нелепые и смешеные
+истории. Читай, голосуй и не  забывай, что в следущий
+раз неудача может настигнуть тебя 😉!</p>
+        </div>
+       <div class="filter-container">
+            <div class="filter-header">
+                <div class="filter-item" id="sortFilter">
+                    <span class="filter-label">
+                        {% if current_sort == 'new' %}
+                            Новые
+                        {% elif current_sort == 'popular' %}
+                            Популярные
+                        {% elif current_sort == 'liked' %}
+                            Понравившиеся
+                        {% elif current_sort == 'old' %}
+                            Старые
+                        {% else %}
+                            Фильтры
+                        {% endif %}
+                    </span>
+                    <div class="filter-dropdown">
+                        <ul class="filter-list">
+                            <li class="filter-option {% if current_sort == 'new' %}selected{% endif %}" data-value="new">Новые</li>
+                            <li class="filter-option {% if current_sort == 'old' %}selected{% endif %}" data-value="old">Старые</li>
+                            <li class="filter-option {% if current_sort == 'popular' %}selected{% endif %}" data-value="popular">Популярные</li>
+                            <li class="filter-option {% if current_sort == 'liked' %}selected{% endif %}" data-value="liked">Понравившиеся</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="filter-item" id="categoryFilter">
+                    <span class="filter-label">
+                        {% if current_category and current_category != 'None' %}
+                            {% for category in categories %}
+                                {% if category.id|string == current_category %}
+                                    {{ category.name }}
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            Категории
+                        {% endif %}
+                    </span>
+                    <div class="filter-dropdown">
+                        <ul class="filter-list">
+                            <li class="filter-option {% if not current_category or current_category == 'None' %}selected{% endif %}" data-value="all">Все категории</li>
+                            {% for category in categories %}
+                            <li class="filter-option {% if current_category == category.id|string %}selected{% endif %}" data-value="{{ category.id }}">{{ category.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <input type="hidden" id="selectedSort" name="sort" value="{{ current_sort|default('new') }}">
+            <input type="hidden" id="selectedCategory" name="category" value="{{ current_category|default('') }}">
+            
+            <div class="container">
+                <div class="story-slider-container">
+                    <div class="story-slider" id="storySlider">
+                        {% if page_obj %}
+                            {% for story in page_obj %}
+                            <div class="story-slide">
+                                <div class="container-story">
+                                    <div class="container-story-name">
+                                        <h1>{{ story.title }}</h1>
+                                    </div>
+                                    <div class="story-info">
+                                        <span class="story-author">{{ story.user.profile.nickname }}</span>
+                                        <span class="story-date">{{ story.created_at.strftime('%d.%m.%Y') }}</span>
+                                        {% if story.category %}
+                                        <span class="story-category-tag">{{ story.category.name }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="container-story-name-text">
+                                        <p>{{ story.content|truncate(300) }}</p>
+                                    </div>
+                                    <div class="story-footer">
+                                        <a href="/stories/{{ story.id }}/" class="read-more">Читать полностью</a>
+                                        <div class="story-stats">
+                                            <span class="story-likes">
+                                                <i class="like-icon">♥</i> {{ story.likes.count() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="story-slide">
+                                <div class="container-story">
+                                    <div class="empty-state">
+                                        <h2>Истории не найдены</h2>
+                                        <p>Пока здесь нет историй. Вы можете быть первым, кто поделится своей историей!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="slider-navigation">
+                        <button id="prevSlide" class="nav-button prev-button">&lt;</button>
+                        <div class="slider-indicator">
+                            <span id="currentSlide">1</span> / <span id="totalSlides">{{ page_obj|length if page_obj else 1 }}</span>
+                        </div>
+                        <button id="nextSlide" class="nav-button next-button">&gt;</button>
+                    </div>
+                </div>
+                
+                <!-- Пагинация (для перехода между страницами) -->
+                {% if page_obj and page_obj.has_other_pages() %}
+                <div class="pagination">
+                    {% if page_obj.has_previous() %}
+                        <a href="?page={{ page_obj.previous_page_number() }}{% if current_sort and current_sort != 'new' %}&sort={{ current_sort }}{% endif %}{% if current_category and current_category != 'None' %}&category={{ current_category }}{% endif %}" class="pagination-item">&laquo;</a>
+                    {% endif %}
+                    
+                    {% for i in range(1, page_obj.paginator.num_pages + 1) %}
+                        {% if page_obj.number == i %}
+                            <span class="pagination-item active">{{ i }}</span>
+                        {% else %}
+                            <a href="?page={{ i }}{% if current_sort and current_sort != 'new' %}&sort={{ current_sort }}{% endif %}{% if current_category and current_category != 'None' %}&category={{ current_category }}{% endif %}" class="pagination-item">{{ i }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next() %}
+                        <a href="?page={{ page_obj.next_page_number() }}{% if current_sort and current_sort != 'new' %}&sort={{ current_sort }}{% endif %}{% if current_category and current_category != 'None' %}&category={{ current_category }}{% endif %}" class="pagination-item">&raquo;</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+       </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Получаем элементы фильтров
+            const sortFilter = document.getElementById('sortFilter');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const selectedSortInput = document.getElementById('selectedSort');
+            const selectedCategoryInput = document.getElementById('selectedCategory');
+            
+            // Функция для открытия/закрытия выпадающего списка
+            function toggleDropdown(filterItem) {
+                const dropdown = filterItem.querySelector('.filter-dropdown');
+                const isOpen = dropdown.classList.contains('visible');
+                
+                // Закрываем все открытые выпадающие списки
+                document.querySelectorAll('.filter-dropdown.visible').forEach(el => {
+                    if (el !== dropdown) {
+                        el.classList.remove('visible');
+                    }
+                });
+                
+                // Переключаем видимость текущего выпадающего списка
+                dropdown.classList.toggle('visible');
+            }
+            
+            // Обработчики кликов на фильтры
+            sortFilter.addEventListener('click', function() {
+                toggleDropdown(this);
+            });
+            
+            categoryFilter.addEventListener('click', function() {
+                toggleDropdown(this);
+            });
+            
+            // Обработчик выбора опции в выпадающем списке
+            document.querySelectorAll('.filter-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const value = this.dataset.value;
+                    const filterItem = this.closest('.filter-item');
+                    const filterLabel = filterItem.querySelector('.filter-label');
+                    const dropdown = filterItem.querySelector('.filter-dropdown');
+                    
+                    // Определяем, какой фильтр был выбран
+                    if (filterItem.id === 'sortFilter') {
+                        selectedSortInput.value = value;
+                        filterLabel.textContent = this.textContent;
+                    } else if (filterItem.id === 'categoryFilter') {
+                        selectedCategoryInput.value = value;
+                        filterLabel.textContent = this.textContent;
+                    }
+                    
+                    // Закрываем выпадающий список
+                    dropdown.classList.remove('visible');
+                    
+                    // Отправляем запрос на фильтрацию
+                    applyFilters();
+                });
+            });
+            
+            // Функция для применения фильтров (отправки запроса)
+            function applyFilters() {
+                const sort = selectedSortInput.value;
+                const category = selectedCategoryInput.value;
+                
+                // Формируем URL с параметрами фильтрации
+                let url = window.location.pathname;
+                const params = [];
+                
+                if (sort && sort !== 'new') {
+                    params.push(`sort=${sort}`);
+                }
+                
+                if (category && category !== 'all' && category !== 'None') {
+                    params.push(`category=${category}`);
+                }
+                
+                // Добавляем параметр страницы, если он уже есть в URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const page = urlParams.get('page');
+                if (page) {
+                    params.push(`page=${page}`);
+                }
+                
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                
+                // Перенаправляем на новый URL
+                window.location.href = url;
+            }
+            
+            // Закрытие выпадающих списков при клике вне них
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.filter-item')) {
+                    document.querySelectorAll('.filter-dropdown').forEach(dropdown => {
+                        dropdown.classList.remove('visible');
+                    });
+                }
+            });
+            
+            // Слайдер для историй
+            const slider = document.getElementById('storySlider');
+            const slides = document.querySelectorAll('.story-slide');
+            const prevButton = document.getElementById('prevSlide');
+            const nextButton = document.getElementById('nextSlide');
+            const currentSlideIndicator = document.getElementById('currentSlide');
+            const totalSlidesIndicator = document.getElementById('totalSlides');
+            
+            // Если есть слайды
+            if (slides.length > 0) {
+                let currentIndex = 0;
+                const totalSlides = slides.length;
+                
+                // Обновление индикатора слайдов
+                function updateIndicator() {
+                    currentSlideIndicator.textContent = currentIndex + 1;
+                    totalSlidesIndicator.textContent = totalSlides;
+                }
+                
+                // Показать текущий слайд
+                function showSlide(index) {
+                    // Убедимся, что индекс в пределах допустимого диапазона
+                    if (index < 0) {
+                        index = totalSlides - 1;
+                    } else if (index >= totalSlides) {
+                        index = 0;
+                    }
+                    
+                    // Обновляем текущий индекс
+                    currentIndex = index;
+                    
+                    // Перемещаем слайдер
+                    slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+                    
+                    // Обновляем индикатор
+                    updateIndicator();
+                }
+                
+                // Обработчики кнопок навигации
+                prevButton.addEventListener('click', () => {
+                    showSlide(currentIndex - 1);
+                });
+                
+                nextButton.addEventListener('click', () => {
+                    showSlide(currentIndex + 1);
+                });
+                
+                // Инициализация слайдера
+                showSlide(0);
+                
+                // Обработка свайпов на мобильных устройствах
+                let touchStartX = 0;
+                let touchEndX = 0;
+                
+                slider.addEventListener('touchstart', e => {
+                    touchStartX = e.changedTouches[0].screenX;
+                });
+                
+                slider.addEventListener('touchend', e => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                });
+                
+                function handleSwipe() {
+                    const threshold = 50; // Минимальное расстояние для срабатывания свайпа
+                    
+                    if (touchStartX - touchEndX > threshold) {
+                        // Свайп влево - следующий слайд
+                        showSlide(currentIndex + 1);
+                    } else if (touchEndX - touchStartX > threshold) {
+                        // Свайп вправо - предыдущий слайд
+                        showSlide(currentIndex - 1);
+                    }
+                }
+                
+                // Обработка нажатий клавиш (влево/вправо)
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'ArrowLeft') {
+                        showSlide(currentIndex - 1);
+                    } else if (e.key === 'ArrowRight') {
+                        showSlide(currentIndex + 1);
+                    }
+                });
+            }
+        });
+    </script>
+    
+    <!-- JavaScript для всплывающего уведомления о модерации -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем, была ли отправлена история на модерацию
+            {% if request.session.story_submitted %}
+                // Получаем элемент уведомления
+                const notification = document.getElementById('moderationNotification');
+                const closeBtn = document.getElementById('closeNotification');
+                
+                // Показываем уведомление с небольшой задержкой
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 500);
+                
+                // Скрываем уведомление через 6 секунд
+                const autoHideTimeout = setTimeout(() => {
+                    hideNotification();
+                }, 6000);
+                
+                // Функция для скрытия уведомления с анимацией
+                function hideNotification() {
+                    notification.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateY(-20px)';
+                    
+                    // После завершения анимации убираем класс show
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                        notification.style = '';  // Сбрасываем инлайн-стили
+                    }, 500);
+                }
+                
+                // Добавляем обработчик клика для кнопки закрытия
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Предотвращаем всплытие события клика
+                    hideNotification();
+                    clearTimeout(autoHideTimeout);
+                });
+                
+                // Добавляем обработчик клика для перехода в профиль по клику на основную часть уведомления
+                notification.addEventListener('click', function(e) {
+                    // Проверяем, что клик был не по кнопке закрытия
+                    if (e.target !== closeBtn && !closeBtn.contains(e.target)) {
+                        // Сначала скрываем уведомление
+                        hideNotification();
+                        
+                        // Отменяем автоматическое скрытие
+                        clearTimeout(autoHideTimeout);
+                        
+                        // Перенаправляем на страницу профиля
+                        setTimeout(() => {
+                            window.location.href = "{{ url('profile') }}";
+                        }, 300); // Небольшая задержка для анимации
+                    }
+                });
+                
+                // Удаляем флаг из сессии, чтобы не показывать уведомление при следующей загрузке страницы
+                fetch("{{ url('clear_notification') }}", { 
+                    method: 'POST', 
+                    headers: { 
+                        'X-CSRFToken': '{{ csrf_token }}' 
+                    } 
+                });
+            {% endif %}
+        });
+    </script>
+{% endblock %}

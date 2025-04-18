@@ -1,0 +1,388 @@
+{% extends "base/base.j2" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ static('css/StoryDetail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="story-container">
+        <div class="story-header">
+            <h1 class="story-title">{{ story.title }}</h1>
+            <div class="story-meta">
+                <div class="story-meta-item">
+                    <span class="story-meta-label">Автор:</span>
+                    <span>{{ story.user.profile.nickname }}</span>
+                </div>
+                <div class="story-meta-item">
+                    <span class="story-meta-label">Категория:</span>
+                    {% if story.categories.exists() %}
+                        <span>
+                            {% for category in story.categories.all() %}
+                                <a href="{{ url('story_list') }}?categories={{ category.id }}" class="story-category-tag">{{ category.name }}</a>
+                            {% endfor %}
+                        </span>
+                    {% elif story.category %}
+                        <span>{{ story.category.name }}</span>
+                    {% else %}
+                        <span>Без категории</span>
+                    {% endif %}
+                </div>
+                <div class="story-meta-item">
+                    <span class="story-meta-label">Дата:</span>
+                    <span>{{ story.created_at.strftime('%d.%m.%Y') }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="story-content">
+            <p>{{ story.content|safe }}</p>
+        </div>
+        
+        {% if story.media_files.exists() %}
+        <div class="story-media-link">
+            <a href="{{ url('story_media', story.id) }}" class="media-button">Открыть медиа файлы</a>
+        </div>
+        {% endif %}
+        
+        <div class="story-footer">
+            <div class="story-actions">
+                <div class="story-reaction">
+                    <div class="story-stats like-stats" data-story-id="{{ story.id }}">
+                        <span class="stats-count">{{ story.likes.count() }}</span>
+                        <span class="like-icon {% if request.user.is_authenticated and request.user in story.likes.all() %}active{% endif %}">👍</span>
+                    </div>
+                    
+                    <div class=" dislike-stats story-stats" data-story-id="{{ story.id }}">
+                        <span class="stats-count">{{ story.dislikes.count() }}</span>
+                        <span class="dislike-icon {% if request.user.is_authenticated and request.user in story.dislikes.all() %}active{% endif %}">👎</span>
+                    </div>
+                </div>
+                
+                <a href="{{ url('story_comments', story.id) }}" class="comments-link">
+                    <span class="comments-icon">💬</span>
+                    <span class="comments-count">{{ story.comments.count() }}</span>
+                    <span class="comments-text">Комментарии</span>
+                </a>
+            </div>
+            
+            <div class="back-to-list">
+                <a href="javascript:void(0)" id="backButton" class="back-link">← Вернуться к списку историй</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Определяем, поддерживает ли браузер passive event listeners
+    let passiveSupported = false;
+    try {
+      const options = {
+        get passive() {
+          passiveSupported = true;
+          return true;
+        }
+      };
+      window.addEventListener("test", null, options);
+      window.removeEventListener("test", null, options);
+    } catch(err) {
+      passiveSupported = false;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализируем форматирование больших чисел и активные состояния
+        document.querySelectorAll('.stats-count').forEach(formatLargeNumber);
+        
+        // Если пользователь авторизован, устанавливаем активные состояния для лайков и дизлайков
+        {% if request.user.is_authenticated %}
+            document.querySelectorAll('.story-stats').forEach(function(button) {
+                const iconElement = button.querySelector('.like-icon, .dislike-icon');
+                if (iconElement && iconElement.classList.contains('active')) {
+                    if (iconElement.classList.contains('like-icon')) {
+                        button.classList.add('active-like');
+                    } else if (iconElement.classList.contains('dislike-icon')) {
+                        button.classList.add('active-dislike');
+                    }
+                }
+            });
+        {% endif %}
+        
+        // При загрузке страницы сохраняем оригинальный URL списка историй
+        const referrer = document.referrer;
+        
+        // Сохраняем URL списка историй только если он еще не сохранен и это действительно список историй
+        if (!sessionStorage.getItem('original_stories_url') && referrer.includes('/stories') && !referrer.includes('/media/')) {
+            sessionStorage.setItem('original_stories_url', referrer);
+        }
+        
+        // Сохраняем категории из URL в localStorage, если они есть
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoriesParam = urlParams.get('categories');
+        if (categoriesParam) {
+            localStorage.setItem('selectedCategories', categoriesParam);
+            console.log('Сохранены категории из URL:', categoriesParam);
+        }
+        
+        // Добавляем обработчики для тегов категорий
+        document.querySelectorAll('.story-category-tag').forEach(function(tag) {
+            tag.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Получаем ID категории из ссылки
+                const href = this.getAttribute('href');
+                const urlObj = new URL(href, window.location.origin);
+                const categoryId = urlObj.searchParams.get('categories');
+                
+                if (categoryId) {
+                    // Сохраняем категорию в localStorage
+                    localStorage.setItem('selectedCategories', categoryId);
+                    console.log('Сохранена категория:', categoryId);
+                    
+                    // Переходим по ссылке
+                    window.location.href = href;
+                }
+            });
+        });
+        
+        // Добавляем обработчики для кнопок лайка и дизлайка
+        document.querySelectorAll('.like-stats, .dislike-stats').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Предотвращаем всплытие события
+                e.stopPropagation();
+                
+                const storyId = this.getAttribute('data-story-id');
+                const isLike = this.classList.contains('like-stats');
+                
+                // Добавляем класс для анимации только к этой кнопке
+                // Предварительно блокируем кнопку чтобы избежать множественных кликов
+                if (this.classList.contains('processing')) {
+                    return;
+                }
+                
+                this.classList.add('processing');
+                this.classList.remove('button-clicked');
+                void this.offsetWidth; // Сбрасываем анимацию
+                this.classList.add('button-clicked');
+                
+                // Отправляем запрос на сервер
+                sendReaction(storyId, isLike, this);
+                
+                // Удаляем блокировку через небольшой таймаут
+                setTimeout(() => {
+                    this.classList.remove('processing');
+                }, 800);
+            });
+            
+            // Предотвращаем дрожание при нажатии на кнопки
+            button.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+            });
+        });
+        
+        // Код для обработки кнопки "Вернуться к списку историй"
+        const backButton = document.getElementById('backButton');
+        if (backButton) {
+            backButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Получаем сохраненный URL списка историй
+                let returnUrl = sessionStorage.getItem('original_stories_url');
+                
+                // Если нет сохраненного URL, формируем новый с сохранением параметров
+                if (!returnUrl) {
+                    const urlParams = new URLSearchParams();
+                    
+                    // Получаем сохраненные параметры
+                    const savedCategories = localStorage.getItem('selectedCategories');
+                    const currentPage = localStorage.getItem('currentPage');
+                    const lastSlideIndex = localStorage.getItem('lastSlideIndex');
+                    
+                    // Добавляем параметры, если они есть
+                    if (savedCategories) {
+                        urlParams.set('categories', savedCategories);
+                    }
+                    
+                    if (currentPage && currentPage !== '1') {
+                        urlParams.set('page', currentPage);
+                    }
+                    
+                    if (lastSlideIndex) {
+                        urlParams.set('slide_index', lastSlideIndex);
+                        urlParams.set('from_story_id', '{{ story.id }}');
+                    }
+                    
+                    returnUrl = '/stories/' + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                }
+                
+                // Очищаем сохраненный URL после использования
+                sessionStorage.removeItem('original_stories_url');
+                
+                // Переходим на страницу списка историй
+                window.location.href = returnUrl;
+            });
+        }
+    });
+    
+    // Функция для переключения активного состояния иконки
+    function toggleIconActive(iconElement, active) {
+        if (active) {
+            iconElement.classList.add('active');
+        } else {
+            iconElement.classList.remove('active');
+        }
+    }
+    
+    // Функция для переключения активного состояния кнопки
+    function toggleButtonActive(button, active, type) {
+        if (type === 'like') {
+            if (active) {
+                button.classList.add('active-like');
+            } else {
+                button.classList.remove('active-like');
+            }
+        } else if (type === 'dislike') {
+            if (active) {
+                button.classList.add('active-dislike');
+            } else {
+                button.classList.remove('active-dislike');
+            }
+        }
+    }
+    
+    // Функция для отправки реакции
+    function sendReaction(storyId, isLike, clickedButton) {
+        // Определяем URL в зависимости от типа реакции
+        const url = isLike 
+            ? '/stories/ajax/like/' + storyId + '/' 
+            : '/stories/ajax/dislike/' + storyId + '/';
+        
+        // Получаем элементы для обновления
+        const container = clickedButton.closest('.story-reaction');
+        const likeButton = container.querySelector('.like-stats');
+        const dislikeButton = container.querySelector('.dislike-stats');
+        const likeIcon = likeButton.querySelector('.like-icon');
+        const dislikeIcon = dislikeButton.querySelector('.dislike-icon');
+        const likeCount = likeButton.querySelector('.stats-count');
+        const dislikeCount = dislikeButton.querySelector('.stats-count');
+        
+        // Сохраняем текущие активные состояния
+        const wasLikeActive = likeIcon.classList.contains('active');
+        const wasDislikeActive = dislikeIcon.classList.contains('active');
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Если кликнули на лайк
+                if (isLike) {
+                    // Если лайк был поставлен
+                    toggleIconActive(likeIcon, data.liked);
+                    toggleButtonActive(likeButton, data.liked, 'like');
+                    
+                    // Если был дизлайк и нужно его убрать
+                    if (data.was_disliked) {
+                        toggleIconActive(dislikeIcon, false);
+                        toggleButtonActive(dislikeButton, false, 'dislike');
+                        
+                        // Анимируем дизлайк только если он был активен и меняем на лайк
+                        if (wasDislikeActive) {
+                            dislikeButton.classList.remove('button-clicked');
+                            void dislikeButton.offsetWidth;
+                            dislikeButton.classList.add('button-clicked');
+                        }
+                    }
+                } 
+                // Если кликнули на дизлайк
+                else {
+                    // Если дизлайк был поставлен
+                    toggleIconActive(dislikeIcon, data.disliked);
+                    toggleButtonActive(dislikeButton, data.disliked, 'dislike');
+                    
+                    // Если был лайк и нужно его убрать
+                    if (data.was_liked) {
+                        toggleIconActive(likeIcon, false);
+                        toggleButtonActive(likeButton, false, 'like');
+                        
+                        // Анимируем лайк только если он был активен и меняем на дизлайк
+                        if (wasLikeActive) {
+                            likeButton.classList.remove('button-clicked');
+                            void likeButton.offsetWidth;
+                            likeButton.classList.add('button-clicked');
+                        }
+                    }
+                }
+                
+                // Обновляем счетчики с анимацией
+                updateCountWithAnimation(likeCount, data.likes_count);
+                updateCountWithAnimation(dislikeCount, data.dislikes_count);
+            } else {
+                // Обработка ошибки, например, если пользователь не авторизован
+                if (data.message && data.message.includes('авторизуйтесь')) {
+                    window.location.href = '/users/login/';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+        });
+    }
+    
+    // Функция для обновления счетчика с анимацией
+    function updateCountWithAnimation(countElement, newValue) {
+        // Запоминаем оригинальную ширину элемента
+        const originalWidth = countElement.offsetWidth;
+        
+        // Добавляем анимацию
+        countElement.classList.add('count-animated');
+        
+        // Устанавливаем значение
+        countElement.textContent = formatLargeNumber(newValue);
+        
+        // Убираем анимацию через небольшое время
+        setTimeout(() => {
+            countElement.classList.remove('count-animated');
+        }, 400);
+    }
+    
+    // Функция для форматирования больших чисел
+    function formatLargeNumber(element) {
+        if (typeof element === 'object' && element !== null) {
+            const num = parseInt(element.textContent.trim(), 10);
+            element.textContent = formatLargeNumber(num);
+            return element;
+        }
+        
+        const num = parseInt(element, 10);
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'М';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'К';
+        }
+        return num.toString().padStart(1, ' ');
+    }
+    
+    // Функция для получения куки
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %} 

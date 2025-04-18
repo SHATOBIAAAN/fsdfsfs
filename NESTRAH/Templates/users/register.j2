@@ -1,0 +1,346 @@
+{% extends "Base/Base.j2" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ static('css/Base.css') }}">
+    <link rel="stylesheet" href="{{ static('css/FormContainer.css') }}">
+    <link rel="stylesheet" href="{{ static('css/Register.css') }}">
+{% endblock %}
+
+
+{% block content %}
+    <div class="main-info">
+        <div class="main-info-text">
+            <h1 class="main-title">РЕГИСТРАЦИЯ</h1>
+            <p class="main-description">Создайте аккаунт в НЕстраховой и застрахуйте свои фейлы 🙃!</p>
+        </div>
+        <div class="container {% if not error and not all_errors %}container-expanding{% endif %}">
+            <div class="container-auth">
+                <h2 class="container-auth-form-title">РЕГИСТРАЦИЯ</h2>
+                <div class="container-auth-form">
+                    <form method="post" class="container-auth-form-input">
+                        {{ csrf_input }}
+                        <div class="input-wrapper">
+                            <input type="email" name="email" placeholder="Введите почту" value="{{ request.POST.email|default('') }}" required>
+                            <span class="input-icon">📧</span>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="password" name="password1" id="password1" placeholder="Придумайте пароль" required>
+                            <span class="input-icon">🔑</span>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="password" name="password2" placeholder="Повторите пароль" required>
+                            <span class="input-icon">🔐</span>
+                        </div>
+                        
+                        <div class="error-message-wrapper {% if error or all_errors %}with-error{% endif %}">
+                            {% if error %}
+                            <div class="container-auth-error">{{ error }}</div>
+                            {% endif %}
+                            
+                            {% if all_errors and all_errors|length > 1 %}
+                            <ul class="error-list">
+                                {% for error_msg in all_errors[1:] %}
+                                <li class="error-list-item" style="animation-delay: {{ loop.index * 0.1 }}s">{{ error_msg }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="requirements-container">
+                            <div class="password-requirements {% if not error and not all_errors %}visible{% endif %}" id="passwordRequirements">
+                                <p>Требования к паролю:</p>
+                                <ul>
+                                    <li id="length-requirement">Не менее 8 символов</li>
+                                    <li id="email-requirement">Не должен быть похож на email</li>
+                                    <li id="common-requirement">Не должен быть слишком простым</li>
+                                    <li id="numeric-requirement">Не должен состоять только из цифр</li>
+                                    <li id="match-requirement">Пароли должны совпадать</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="container-auth-form-button hidden">
+                            <button type="submit">Зарегистрироваться</button>
+                        </div>
+                        
+                        <div class="login-link-container">
+                            <p class="container-auth-form-text">Уже есть аккаунт? <a href="{{ url('login') }}">Вход→</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Кэшируем DOM-элементы
+            const password1Field = document.getElementById('password1');
+            const password2Field = document.querySelector('input[name="password2"]');
+            const passwordRequirements = document.getElementById('passwordRequirements');
+            const submitButton = document.querySelector('.container-auth-form-button');
+            const container = document.querySelector('.container');
+            
+            const lengthRequirement = document.getElementById('length-requirement');
+            const emailRequirement = document.getElementById('email-requirement');
+            const commonRequirement = document.getElementById('common-requirement');
+            const numericRequirement = document.getElementById('numeric-requirement');
+            const matchRequirement = document.getElementById('match-requirement');
+            
+            const emailField = document.querySelector('input[name="email"]');
+            
+            const COMMON_PASSWORDS = ['password', '12345678', 'qwerty', '123456789', 'abc123', '111111', 'admin'];
+            
+            let passwordsMatch = false;
+            
+            // Проверка всех требований к паролю
+            function checkAllRequirementsMet() {
+                return lengthRequirement.classList.contains('completed') &&
+                       emailRequirement.classList.contains('completed') &&
+                       commonRequirement.classList.contains('completed') &&
+                       numericRequirement.classList.contains('completed');
+            }
+            
+            // Проверка совпадения паролей
+            function checkPasswordsMatch() {
+                if (password1Field.value && password2Field.value) {
+                    passwordsMatch = password1Field.value === password2Field.value;
+                    
+                    if (passwordsMatch) {
+                        matchRequirement.classList.add('completed');
+                    } else {
+                        matchRequirement.classList.remove('completed');
+                    }
+                    
+                    return passwordsMatch;
+                }
+                
+                matchRequirement.classList.remove('completed');
+                passwordsMatch = false;
+                return false;
+            }
+            
+            // Переключение видимости требований к паролю
+            function togglePasswordRequirements(show) {
+                if (show) {
+                    container.classList.add('container-expanding');
+                    submitButton.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        passwordRequirements.classList.add('visible');
+                    }, 150);
+                } else {
+                    passwordRequirements.classList.remove('visible');
+                    
+                    setTimeout(() => {
+                        container.classList.remove('container-expanding');
+                        
+                        if (checkAllRequirementsMet() && checkPasswordsMatch()) {
+                            submitButton.classList.remove('hidden');
+                        }
+                    }, 350);
+                }
+            }
+            
+            // Скрытие требований если все выполнены
+            function hideRequirementsIfNeeded() {
+                if (checkAllRequirementsMet() && checkPasswordsMatch()) {
+                    if (passwordRequirements.classList.contains('visible')) {
+                        setTimeout(() => {
+                            togglePasswordRequirements(false);
+                        }, 500);
+                    }
+                }
+            }
+            
+            // Показать требования к паролю и скрыть ошибки
+            function showErrorRequirements() {
+                const errorElements = document.querySelectorAll('.container-auth-error, .error-list');
+                errorElements.forEach(el => {
+                    if (el.style.display !== 'none') {
+                        el.style.display = 'none';
+                    }
+                });
+                
+                togglePasswordRequirements(true);
+            }
+            
+            // Показать ошибки и скрыть требования к паролю
+            function showErrorsHideRequirements() {
+                passwordRequirements.classList.remove('visible');
+                container.classList.remove('container-expanding');
+                submitButton.classList.add('hidden');
+                
+                const errorElements = document.querySelectorAll('.container-auth-error, .error-list');
+                errorElements.forEach(el => {
+                    el.style.display = '';
+                });
+            }
+            
+            // Проверка требований к паролю при вводе
+            function checkPasswordRequirements() {
+                const password = password1Field.value;
+                const email = emailField.value;
+                
+                if (!password) {
+                    togglePasswordRequirements(true);
+                    return;
+                }
+                
+                // Длина пароля
+                if (password.length >= 8) {
+                    lengthRequirement.classList.add('completed');
+                } else {
+                    lengthRequirement.classList.remove('completed');
+                }
+                
+                // Сходство с email
+                if (email && password) {
+                    if (email.toLowerCase().includes(password.toLowerCase()) || 
+                        password.toLowerCase().includes(email.toLowerCase())) {
+                        emailRequirement.classList.remove('completed');
+                    } else {
+                        emailRequirement.classList.add('completed');
+                    }
+                } else {
+                    emailRequirement.classList.add('completed');
+                }
+                
+                // Проверка на цифры
+                if (password && !(/^\d+$/.test(password))) {
+                    numericRequirement.classList.add('completed');
+                } else {
+                    numericRequirement.classList.remove('completed');
+                }
+                
+                // Проверка на популярные пароли
+                if (password && !COMMON_PASSWORDS.includes(password.toLowerCase()) && password.length >= 8) {
+                    commonRequirement.classList.add('completed');
+                } else {
+                    commonRequirement.classList.remove('completed');
+                }
+                
+                // Проверка совпадения паролей
+                checkPasswordsMatch();
+                
+                // Скрываем требования если все выполнены
+                hideRequirementsIfNeeded();
+            }
+            
+            // Показываем требования при фокусе на полях пароля
+            [password1Field, password2Field].forEach(field => {
+                field.addEventListener('focus', () => {
+                    const errorElements = document.querySelectorAll('.container-auth-error, .error-list');
+                    if (errorElements.length > 0 && errorElements[0].style.display !== 'none') {
+                        showErrorRequirements();
+                    } else {
+                        togglePasswordRequirements(true);
+                    }
+                });
+            });
+            
+            // Обработчик фокуса на поле email
+            emailField.addEventListener('focus', () => {
+                const errorElements = document.querySelectorAll('.container-auth-error, .error-list');
+                if (errorElements.length > 0 && errorElements[0].style.display !== 'none') {
+                    showErrorRequirements();
+                }
+            });
+            
+            // Обработчики для проверки пароля при вводе
+            password1Field.addEventListener('input', checkPasswordRequirements);
+            
+            // Обработчик для проверки совпадения паролей
+            password2Field.addEventListener('input', function() {
+                checkPasswordsMatch();
+                
+                if (this.value && password1Field.value && !passwordsMatch) {
+                    togglePasswordRequirements(true);
+                } else {
+                    hideRequirementsIfNeeded();
+                }
+            });
+            
+            // Обработчик blur для второго поля пароля
+            password2Field.addEventListener('blur', function() {
+                if (password1Field.value && this.value && !passwordsMatch) {
+                    togglePasswordRequirements(true);
+                } else if (checkAllRequirementsMet() && checkPasswordsMatch()) {
+                    togglePasswordRequirements(false);
+                }
+            });
+            
+            // Обработчик blur для первого поля пароля
+            password1Field.addEventListener('blur', function() {
+                if (!this.value) {
+                    togglePasswordRequirements(true);
+                } else if (checkAllRequirementsMet() && checkPasswordsMatch()) {
+                    togglePasswordRequirements(false);
+                }
+            });
+            
+            // Обработчик изменения email
+            emailField.addEventListener('input', function() {
+                if (password1Field.value) {
+                    password1Field.dispatchEvent(new Event('input'));
+                }
+            });
+            
+            // Обработчик событий для полей ввода, чтобы при изменении
+            // данных показать требования вместо ошибок
+            if (document.querySelector('.container-auth-error') || document.querySelector('.error-list')) {
+                showErrorsHideRequirements();
+                
+                const allInputs = document.querySelectorAll('input');
+                const handleInput = function() {
+                    const errorElements = document.querySelectorAll('.container-auth-error, .error-list');
+                    if (errorElements.length > 0 && errorElements[0].style.display !== 'none') {
+                        showErrorRequirements();
+                        
+                        // Удаляем слушатели, чтобы они не срабатывали повторно
+                        allInputs.forEach(inp => {
+                            inp.removeEventListener('input', handleInput);
+                        });
+                    }
+                };
+                
+                allInputs.forEach(input => {
+                    input.addEventListener('input', handleInput);
+                });
+            }
+            
+            // Инициализация при загрузке страницы
+            if (password1Field.value) {
+                // Если пароль уже заполнен (например, при обновлении страницы)
+                checkPasswordRequirements();
+                if (password2Field.value) {
+                    checkPasswordsMatch();
+                }
+            } else {
+                // Если пароль не заполнен
+                if (document.querySelector('.container-auth-error') || document.querySelector('.error-list')) {
+                    // Если есть ошибки, показываем только их
+                    showErrorsHideRequirements();
+                } else {
+                    // Анимация для элементов требований
+                    const requirementItems = passwordRequirements.querySelectorAll('li');
+                    requirementItems.forEach((item, index) => {
+                        setTimeout(() => {
+                            item.style.opacity = '1';
+                            item.style.transform = 'translateX(0)';
+                        }, 300 + index * 100);
+                    });
+                    
+                    // Анимация заголовка требований
+                    const requirementTitle = passwordRequirements.querySelector('p');
+                    setTimeout(() => {
+                        if (requirementTitle) {
+                            requirementTitle.style.opacity = '1';
+                            requirementTitle.style.transform = 'translateY(0)';
+                        }
+                    }, 300);
+                }
+            }
+        });
+    </script>
+{% endblock %} 

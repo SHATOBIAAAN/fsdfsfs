@@ -1,0 +1,373 @@
+/* Основные стили контейнера */
+
+/* Глобальные стили для предотвращения прокрутки - убраны */
+/* 
+html,
+body {
+    overflow: hidden;
+    height: 100%;
+    position: fixed;
+    width: 100%;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+* {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+*/
+
+/* Стили контейнера формы с гибкой высотой */
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 450px;
+}
+
+.container-auth {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.container-auth-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.container-auth-form-input {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    position: relative;
+    min-height: 250px; /* Минимальная высота для предотвращения скачков */
+}
+
+/* Стили для полей с иконками */
+.input-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+.input-wrapper input {
+    margin-bottom: 0;
+    padding: 15px;
+    width: 92%;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: 'Unbounded', regular;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    padding-right: 40px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-wrapper input:focus {
+    border-color: #99ff8b;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(153, 255, 139, 0.3);
+}
+
+.input-wrapper input::placeholder {
+    font-family: 'Unbounded', regular;
+    color: #aaa;
+}
+
+.input-icon {
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+    user-select: none;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.3s ease;
+}
+
+.input-wrapper input:focus + .input-icon {
+    color: #99ff8b;
+}
+
+/* Стили для кнопки регистрации */
+.container-auth-form-button {
+    padding-top: 10px;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 15px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.container-auth-form-button.hidden {
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none; /* Отключаем события мыши когда скрыта */
+}
+
+.container-auth-form-text {
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* Контейнер с ошибками */
+.error-message-wrapper {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.error-message-wrapper.with-error {
+    margin-bottom: 15px;
+}
+
+.error-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+    width: 100%;
+}
+
+.error-list-item {
+    color: #ff6b6b;
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    animation: fadeIn 0.5s ease forwards;
+    opacity: 0;
+}
+
+/* Стили ошибки */
+.container-auth-error {
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 15px;
+    background: rgba(255, 0, 0, 0.2);
+    border-radius: 7px;
+    border-left: 4px solid #ff6b6b;
+    text-align: center;
+    width: 90%;
+    margin: 0 auto 10px;
+    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(-10px);
+    animation: fadeInMessage 1s forwards 0.5s;
+}
+
+/* Стили для требований к паролю */
+.requirements-container {
+    width: 100%;
+}
+
+.password-requirements {
+    display: block;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+    margin-top: 10px;
+    transform: translateY(-22px);
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 15px;
+
+    border-radius: 7px;
+    font-size: 14px;
+    color: white;
+    text-align: left;
+}
+
+.password-requirements.visible {
+    display: block;
+    max-height: 250px;
+    opacity: 1;
+}
+
+.password-requirements p {
+    margin-bottom: 5px;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: all 0.4s ease;
+}
+
+.password-requirements.visible p {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.password-requirements ul {
+    padding-left: 20px;
+    list-style-type: none;
+    margin: 5px 0;
+}
+
+.password-requirements li {
+    margin-bottom: 5px;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.4s ease, color 0.3s ease;
+    position: relative;
+    padding-left: 20px;
+}
+
+.password-requirements.visible li {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.password-requirements li:before {
+    content: '•';
+    position: absolute;
+    left: 0;
+}
+
+.password-requirements.visible li:nth-child(1) {
+    transition-delay: 0.1s;
+}
+
+.password-requirements.visible li:nth-child(2) {
+    transition-delay: 0.2s;
+}
+
+.password-requirements.visible li:nth-child(3) {
+    transition-delay: 0.3s;
+}
+
+.password-requirements.visible li:nth-child(4) {
+    transition-delay: 0.4s;
+}
+
+.password-requirements.visible li:nth-child(5) {
+    transition-delay: 0.5s;
+}
+
+/* Стили для выполненных требований */
+.password-requirements li.completed {
+    color: green;
+    text-decoration: line-through;
+    text-decoration-color: rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+.password-requirements li.completed:before {
+    content: '✓';
+    color: #3dba4c;
+    font-weight: bold;
+}
+
+/* Расширение контейнера */
+.container-expanding {
+    transition: padding 0.4s cubic-bezier(0.25, 0.1, 0.25, 1.4);
+    padding-bottom: 10px;
+}
+
+/* Скрытый элемент */
+.hidden {
+    display: none;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInMessage {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInErrorItem {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes flameBg {
+    0% {
+        background-color: #7db875;
+    }
+    30% {
+        background-color: #b89e75;
+    }
+    60% {
+        background-color: #b88675;
+    }
+    100% {
+        background-color: #b87575;
+    }
+}
+
+@keyframes flameBorder {
+    0% {
+        border-color: white;
+    }
+    30% {
+        border-color: #ffcf6b;
+    }
+    60% {
+        border-color: #ff9e6b;
+    }
+    100% {
+        border-color: #ff6b6b;
+    }
+}
+
+@keyframes shakeError {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Изменение размера контейнера при показе требований */
+.container.with-error,
+.container:has(.password-requirements.visible) {
+    min-height: 420px;
+    height: auto;
+}
+
+/* Добавляем анимацию скрытия для ошибок */
+.container-auth-error,
+.error-list {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.container-auth-error[style*='display: none'],
+.error-list[style*='display: none'] {
+    opacity: 0;
+    visibility: hidden;
+}

@@ -1,0 +1,774 @@
+.container {
+    background-color: #7db875;
+
+    max-width: 900px;
+    height: 20px;
+    border-radius: 15px;
+    border: 3px solid white;
+    margin: 0 auto;
+    overflow: visible;
+    position: relative;
+    transition: height 0.5s ease-out, min-height 0.5s ease-out;
+    padding-bottom: 20px;
+}
+.comment-all {
+    padding-top: 10px;
+    height: auto; /* Предотвращаем увеличение высоты при добавлении комментариев */
+}
+.container-comments {
+    padding-top: 100px;
+    position: relative;
+    width: 95%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.comment-container {
+    background-color: #fff;
+    width: 100%;
+    max-width: 900px; /* Соответствует ширине container */
+    min-height: 500px; /* Минимальная высота */
+    display: flex;
+    flex-direction: column;
+    border-radius: 15px;
+    position: relative;
+    overflow: visible; /* Изменяем на visible для правильного отображения формы */
+    box-sizing: border-box; /* Учитываем padding в общей высоте */
+    border: 3px solid white; /* Добавляем белую границу как у контейнера */
+}
+.comment-title {
+    font-family: 'Unbounded';
+    font-size: 1.8rem;
+    color: #333;
+    margin: 2px 0 15px 0;
+}
+
+.story-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.story-title {
+    font-size: 1.8rem;
+    color: #333;
+    margin: 0;
+}
+
+.back-link-text {
+    position: absolute;
+    top: 70px;
+    font-family: 'Unbounded';
+    font-size: 1.2rem;
+    color: #333;
+    margin: 0;
+    z-index: 20;
+}
+
+.back-link {
+    color: #dddddd;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.back-link:hover {
+    color: #bcbaba;
+}
+
+.back-link:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: #bcbaba;
+    transition: width 0.3s ease;
+}
+
+.back-link:hover:after {
+    width: 100%;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.comments-header {
+    font-family: 'Unbounded';
+    font-size: 1.2rem;
+    color: #333;
+    margin: 0 0 15px 0;
+}
+
+.comment-item {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.comment-item:last-child {
+    border-bottom: none; /* Убираем нижнюю границу у последнего комментария */
+}
+
+/* Стили для формы комментария */
+.comments-form-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 10; /* Выше других элементов */
+    background-color: transparent; /* Убираем фон */
+    padding: 0 15px 15px;
+}
+
+.comments-form {
+    width: 100%;
+}
+
+.comments-input-group {
+    display: flex;
+    width: 100%;
+    position: relative;
+}
+
+.comments-textarea {
+    flex: 1;
+    min-height: 60px;
+    max-height: 150px; /* Увеличиваем максимальную высоту */
+    padding: 12px 15px;
+    padding-right: 55px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    resize: none;
+    font-family: 'Unbounded';
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background-color: transparent;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    overflow-y: auto; /* Добавляем прокрутку при необходимости */
+}
+
+.comments-textarea:focus {
+    outline: none;
+    background-color: rgba(
+        255,
+        255,
+        255,
+        0.5
+    ); /* Легкий фон при фокусе для лучшей читаемости */
+    border-color: #6ca566;
+    box-shadow: 0 2px 8px rgba(108, 165, 102, 0.2);
+}
+
+/* Стиль для формы при наведении */
+.comments-input-group:hover .comments-textarea {
+    border-color: #bed4bc;
+}
+
+.comments-submit-button {
+    font-family: 'UnboundedExtralight';
+    position: absolute;
+    right: 15px;
+    bottom: 12px;
+    background-color: #6ca566; /* Делаем цвет более заметным */
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    line-height: 1;
+    z-index: 11; /* Выше контейнера формы */
+}
+
+.comments-submit-button:hover {
+    background-color: #7db875;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.comments-submit-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.comments-textarea:focus ~ .comments-submit-button,
+.comments-input-group:focus-within .comments-submit-button {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Стили для списка комментариев */
+.comments-list-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    height: auto;
+    box-sizing: border-box;
+    padding-bottom: 70px; /* Увеличиваем отступ для формы */
+}
+
+.comments-list {
+    overflow-y: auto;
+    padding: 5px 10px 0px 5px;
+    box-sizing: border-box;
+    position: relative;
+    max-height: 357px;
+}
+
+/* Новая структура комментария */
+.comment-layout {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.comment-avatar {
+    flex-shrink: 0;
+    margin-right: 15px;
+}
+
+.comment-body {
+    flex-grow: 1;
+    min-width: 0; /* Важно для правильного переноса текста */
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.comment-user {
+    display: flex;
+    align-items: center;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+    background-color: #ccc;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #333;
+    text-align: left;
+}
+
+.comment-date {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.comment-content {
+    color: #333;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+.no-comments {
+    background-color: #f9f9f9;
+    padding: 2rem;
+    text-align: center;
+    border-radius: 8px;
+    color: #666;
+    margin: 20px 0;
+}
+
+.login-prompt {
+    background-color: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #666;
+}
+
+.login-prompt a {
+    color: #4a89dc;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-prompt a:hover {
+    text-decoration: underline;
+}
+
+/* Стилизация скроллбара */
+.comments-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.comments-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.comments-list::-webkit-scrollbar-thumb {
+    background: #bed4bc;
+    border-radius: 4px;
+}
+
+.comments-list::-webkit-scrollbar-thumb:hover {
+    background: #7db875;
+}
+
+/* Добавляем тень для формы при расширении */
+.comments-form-container.expanded {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+/* Мобильная шапка скрыта на десктопе */
+.mobile-header {
+    display: none;
+}
+
+/* Стили адаптации для мобильных устройств */
+@media (max-width: 768px) {
+    body {
+        background-color: #fff;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        width: 100%;
+        position: fixed; /* Фиксируем body для предотвращения скролла всей страницы */
+    }
+
+    .main-info {
+        height: 100%;
+        overflow: hidden;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    .mobile-header {
+        display: flex; /* Показываем шапку на мобильных */
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background-color: #fff;
+        z-index: 1000;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 0 12px;
+        align-items: center;
+    }
+
+    .mobile-back {
+        display: flex;
+        align-items: center;
+        font-family: 'Unbounded';
+        font-weight: 500;
+        font-size: 16px;
+        color: #333;
+        text-decoration: none;
+    }
+
+    .mobile-back svg {
+        margin-right: 32px;
+        fill: #333;
+    }
+
+    .mobile-title {
+        font-family: 'Unbounded';
+        font-weight: 600;
+        font-size: 18px;
+        color: #333;
+        flex-grow: 1;
+        text-align: center;
+        margin: 0;
+        padding-right: 32px; /* Компенсируем ширину кнопки назад */
+    }
+
+    .back-link-text {
+        display: none; /* Скрываем старую кнопку назад */
+    }
+
+    .container {
+        border-radius: 0;
+        border: none;
+        background-color: transparent;
+        max-width: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        margin-top: 0;
+        min-height: auto;
+        height: auto;
+    }
+
+    .container-comments {
+        padding-top: 56px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0; /* Убираем отступы по бокам */
+        position: absolute; /* Изменяем на absolute для предотвращения смещения */
+        display: block;
+        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        overflow: hidden;
+    }
+
+    .comment-all {
+        width: 100%; /* Растягиваем на всю ширину окна */
+        margin: 0; /* Убираем отступы */
+        padding: 0; /* Убираем отступы */
+        display: block;
+        height: 100%; /* Используем 100% вместо calc */
+        position: relative;
+    }
+
+    .comment-info {
+        display: none; /* Скрываем заголовок, т.к. он дублируется в шапке */
+    }
+
+    .comment-container {
+        width: 100%; /* Растягиваем на всю ширину экрана */
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        min-height: 100%; /* Используем 100% вместо calc */
+        padding: 0;
+        background-color: #fff;
+        margin: 0; /* Убираем отступы */
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .comments-header {
+        width: 100%;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 15px 16px;
+        margin: 0;
+        font-size: 14px;
+        color: #777;
+        background-color: #fff;
+        position: sticky;
+        top: 0; /* Меняем с 56px на 0, так как теперь header прикреплен к container */
+        z-index: 90;
+        box-sizing: border-box;
+        flex-shrink: 0; /* Предотвращаем сжатие заголовка */
+    }
+
+    .comments-header p {
+        margin: 0;
+    }
+
+    .comments-list-wrapper {
+        padding-bottom: 70px; /* Отступ для формы ввода */
+        height: calc(100% - 45px); /* Высота минус высота заголовка */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        flex: 1;
+        position: relative;
+        padding-top: 2px; /* Небольшой отступ сверху */
+        box-sizing: border-box;
+    }
+
+    .comments-list {
+        width: 100%;
+        padding: 0;
+        max-height: none;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .comment-item {
+        padding: 12px 16px;
+        margin-bottom: 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .comment-layout {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .comment-avatar {
+        margin-right: 12px;
+        margin-bottom: 0;
+    }
+
+    .user-avatar,
+    .avatar-placeholder {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%; /* Круглые аватары */
+    }
+
+    .avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e0e0e0;
+        color: #555;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .comment-user {
+        margin-bottom: 4px;
+    }
+
+    .user-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .comment-content {
+        font-size: 15px;
+        line-height: 1.4;
+        color: #333;
+        margin-top: 4px;
+    }
+
+    .comments-form-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px 12px;
+        background-color: #fff;
+        border-top: 1px solid #eaeaea;
+        z-index: 100;
+        transform: translateZ(0); /* Включаем аппаратное ускорение */
+    }
+
+    .comments-textarea {
+        border-radius: 18px;
+        min-height: 36px;
+        max-height: 120px;
+        padding: 8px 40px 8px 16px;
+        font-size: 15px;
+        background-color: #f5f5f5;
+        border: none;
+        box-shadow: none;
+    }
+
+    .comments-textarea:focus {
+        background-color: #f5f5f5;
+    }
+
+    .comments-submit-button {
+        right: 8px;
+        bottom: 5px;
+        width: 32px;
+        height: 32px;
+        border-radius: 16px;
+        background-color: #6ca566;
+    }
+
+    .comments-submit-button:hover,
+    .comments-submit-button:active {
+        background-color: #7db875;
+    }
+
+    .no-comments {
+        padding: 40px 20px;
+        background-color: transparent;
+        color: #999;
+        font-size: 15px;
+        margin: 0;
+        text-align: center;
+    }
+
+    .login-prompt {
+        padding: 20px;
+        margin: 0;
+        background-color: transparent;
+        text-align: center;
+    }
+
+    .login-prompt p {
+        margin-bottom: 15px;
+        color: #666;
+    }
+
+    .login-prompt a {
+        color: #6ca566;
+        padding: 8px 15px;
+        display: inline-block;
+        border-radius: 4px;
+        margin: 0 5px;
+    }
+
+    /* Исправление прокрутки на мобильных */
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+        width: 100%;
+        position: fixed;
+    }
+
+    /* Стили для предотвращения скачков при вызове клавиатуры */
+    .keyboard-open .comments-form-container {
+        position: absolute; /* Меняем fixed на absolute при открытой клавиатуре */
+        bottom: 0;
+    }
+
+    /* Предотвращаем проблемы со скроллом и высотой */
+    .comments-list-wrapper.keyboard-active {
+        height: calc(100% - 70px - var(--keyboard-height, 0px));
+        transition: height 0.2s ease-out;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-header {
+        height: 50px;
+    }
+
+    .mobile-title {
+        font-size: 16px;
+    }
+
+    .container-comments {
+        padding-top: 50px;
+    }
+
+    .comment-container {
+        min-height: calc(100vh - 50px);
+    }
+
+    .comments-header {
+        top: 0; /* Меняем с 50px на 0, так как теперь header прикреплен к container */
+        padding: 12px 16px;
+    }
+
+    .comment-content {
+        font-size: 14px;
+    }
+
+    .comments-textarea {
+        min-height: 34px;
+        font-size: 14px;
+    }
+
+    /* Добавляем эффект нативного overscroll для iOS */
+    .comments-list-wrapper {
+        height: calc(100% - 40px); /* Высота минус высота заголовка */
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+    }
+}
+
+/* Анимации в стиле мобильного приложения (только для мобильных) */
+@media (max-width: 768px) {
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(100%);
+        }
+    }
+
+    .page-enter {
+        animation: slideInRight 0.3s forwards;
+    }
+
+    .page-exit {
+        animation: slideOutRight 0.3s forwards;
+    }
+}
+
+/* Исправление прокрутки на мобильных */
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+    position: fixed;
+}
+
+.container-comments,
+.comment-container {
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Добавляем тень для формы при расширении */
+.comments-form-container.expanded {
+    background-color: #fff;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+}
+
+/* Стили для предотвращения скачков при вызове клавиатуры */
+.keyboard-open .comments-form-container {
+    position: absolute; /* Меняем fixed на absolute при открытой клавиатуре */
+    bottom: 0;
+}
+
+/* Предотвращаем проблемы со скроллом и высотой */
+.comments-list-wrapper.keyboard-active {
+    height: calc(100% - 70px - var(--keyboard-height, 0px));
+    transition: height 0.2s ease-out;
+}

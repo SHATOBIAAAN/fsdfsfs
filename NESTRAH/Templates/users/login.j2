@@ -1,0 +1,46 @@
+{% extends "Base/Base.j2" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ static('css/Base.css') }}">
+    <link rel="stylesheet" href="{{ static('css/FormContainer.css') }}">
+    <link rel="stylesheet" href="{{ static('css/login.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="main-info">
+        <div class="main-info-text">
+            <h1 class="main-title">ВХОД</h1>
+            <p class="main-description">Добро пожаловать в НЕстраховую. Место, где за фейлы платят 🙃!</p>
+        </div>
+        <div class="container {% if error %}login-container with-error{% else %}login-container without-error{% endif %}">
+            <div class="container-auth">
+                <h2 class="container-auth-form-title">ВХОД</h2>
+                <div class="container-auth-form">
+                    <form method="post" class="container-auth-form-input">
+                        {{ csrf_input }}
+                        <div class="input-wrapper">
+                            <input type="email" name="email" placeholder="Введите почту" required value="{{ request.POST.email }}">
+                            <span class="input-icon">📧</span>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="password" name="password" placeholder="Введите пароль" required>
+                            <span class="input-icon">🔑</span>
+                        </div>
+                        
+                        <div class="error-message-wrapper">
+                            {% if error %}
+                            <div class="container-auth-error">{{ error }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="container-auth-form-button">
+                            <button type="submit">Войти</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <p class="container-auth-form-text">Еще нет аккаунта? <a href="{{ url('register') }}">Регистрация→</a></p>
+        </div>
+    </div>
+{% endblock %}
+

@@ -1,0 +1,51 @@
+{% extends "base/base.j2" %}
+
+{% block head %}
+    {{ super() }} {# Наследуем стили из базового шаблона, если нужно #}
+    <title>Страница не найдена</title>
+    <style>
+        /* Можно добавить специфичные стили для 404 */
+        .error-container {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-color);
+        }
+        .error-container h1 {
+            font-size: 3em;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+        .error-container p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+        .error-container a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid var(--link-color);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .error-container a:hover {
+            background-color: var(--link-color);
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="error-container">
+        <div class="main-info">
+            <div class="main-info-text">
+                <h1 class="main-title"><a href="{{ url('MainPage') }}">THE ERROR 404</a></h1>
+                <p class="main-description"><a href="{{ url('MainPage') }}">Ты попал не туда. Может это тоже (нестраховой случай)?
+Всё-же, думаю ты ошибся страницей 👻.</a>
+                
+                
+            </div>
+        </div>
+    </div>
+{% endblock %}
